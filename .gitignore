@@ -23,9 +23,6 @@ dist/
 target/
 dist/
 
-# JetBrains IDE
-.idea/
-
 # Unit test reports
 TEST*.xml
 
@@ -47,4 +44,12 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
+
+# IDE
+.idea
+.vscode
+
+# Go
+vendor
+
 

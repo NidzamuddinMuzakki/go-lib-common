@@ -1,0 +1,74 @@
+image: golang:1.18-alpine
+
+options:
+  docker: true
+
+clone:
+  depth: full
+
+definitions:
+  caches:
+    gomod: ~/.cache/go-build
+    gopathmod: $GOPATH/pkg/mod
+
+  gomod-cache: &gomod-cache
+    - gomod
+    - gopathmod
+
+  services:
+    postgres:
+      image: postgres:13
+      variables:
+        POSTGRES_DB: "pipelines"
+        POSTGRES_USER: "user"
+        POSTGRES_PASSWORD: "password"
+
+  steps:
+    - step: &unit-test
+        name: Unit Test
+        caches: *gomod-cache
+        script:
+          - echo 'Unit Test'
+          - &install-lib apk update && apk add --no-cache git gcc pkgconfig build-base openssh curl libc-dev
+          - &config-git git config --global --add url."git@bitbucket.org:".insteadOf "https://bitbucket.org/"
+          - &install-deps go get ./...
+          - make test-unit
+        artifacts:
+          - cov.out
+
+    - step: &integration-test
+        name: Integration Test
+        size: 2x
+        services:
+          - postgres
+        caches: *gomod-cache
+        script:
+          - echo 'Integration Test'
+          - *install-lib
+          - *config-git
+          - *install-deps
+          - make test-integration
+
+    - step: &list-outdated-dependencies
+        name: List Outdated Dependencies
+        caches: *gomod-cache
+        script:
+          - echo 'List Outdated Dependencies'
+          - go install github.com/psampaz/go-mod-outdated@v0.8.0
+          - go list -u -m -json all | go-mod-outdated -direct -update
+
+pipelines:
+  pull-requests:
+    '**':
+      - parallel:
+          - step: *unit-test
+          - step: *integration-test
+
+      - parallel:
+          - step: *list-outdated-dependencies
+
+  branches:
+    master:
+      - parallel:
+          - step: *unit-test
+          - step: *integration-test
