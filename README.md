@@ -1,4 +1,4 @@
-# GO MIDTRANS IRIS RECON
+# go-lib-common
 
 ## How to Use
 TODO
