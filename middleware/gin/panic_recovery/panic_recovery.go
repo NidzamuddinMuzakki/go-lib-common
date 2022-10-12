@@ -1,4 +1,4 @@
-package gin
+package panic_recovery
 
 import (
 	"errors"
@@ -12,21 +12,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type MiddlewarePanicRecovery interface {
+type IMiddlewarePanicRecovery interface {
 	PanicRecoveryMiddleware() gin.HandlerFunc
 }
 
-type middlewarePanicRecovery struct {
+type MiddlewarePanicRecoveryPackage struct {
 	configEnv string
+	sentry    sentry.ISentry
 }
 
-func NewPanicRecovery(configEnv string) MiddlewarePanicRecovery {
-	return &middlewarePanicRecovery{
-		configEnv: configEnv,
+func WithConfigEnv(configEnv string) Option {
+	return func(s *MiddlewarePanicRecoveryPackage) {
+		s.configEnv = configEnv
+	}
+}
+func WithSentry(sentry sentry.ISentry) Option {
+	return func(s *MiddlewarePanicRecoveryPackage) {
+		s.sentry = sentry
 	}
 }
 
-func (p *middlewarePanicRecovery) PanicRecoveryMiddleware() gin.HandlerFunc {
+type Option func(*MiddlewarePanicRecoveryPackage)
+
+func NewPanicRecovery(
+	options ...Option,
+) IMiddlewarePanicRecovery {
+	middlewarePanicRecoveryPackage := &MiddlewarePanicRecoveryPackage{}
+
+	for _, option := range options {
+		option(middlewarePanicRecoveryPackage)
+	}
+
+	return middlewarePanicRecoveryPackage
+}
+
+func (p *MiddlewarePanicRecoveryPackage) PanicRecoveryMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if pnc := recover(); pnc != nil {
@@ -40,7 +60,7 @@ func (p *middlewarePanicRecovery) PanicRecoveryMiddleware() gin.HandlerFunc {
 				if p.configEnv != constant.EnvProduction {
 					responseMsg = errStr
 				}
-				sentry.HandlingPanic(pnc)
+				p.sentry.HandlingPanic(pnc)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, response.Response{Status: response.StatusFail, Message: responseMsg})
 				return
 			}

@@ -20,30 +20,41 @@ type MoladinEvo interface {
 	UserDetail(ctx context.Context, token string) (actLogModel.UserDetail, error)
 }
 
-type moladinEvo struct {
+type MoladinEvoPackage struct {
 	client        *gorequest.SuperAgent
-	baseURL       string
-	xServicesName string
-}
-
-type Option struct {
 	BaseURL       string
 	XServicesName string
 }
 
-func NewMoladinEvo(opt Option) *moladinEvo {
-
-	return &moladinEvo{
-		client:        gorequest.New(),
-		baseURL:       opt.BaseURL,
-		xServicesName: opt.XServicesName,
+func WithBaseUrl(baseUrl string) Option {
+	return func(s *MoladinEvoPackage) {
+		s.BaseURL = baseUrl
+	}
+}
+func WithServicesName(servicesName string) Option {
+	return func(s *MoladinEvoPackage) {
+		s.XServicesName = servicesName
 	}
 }
 
-func (c *moladinEvo) Health(ctx context.Context) error {
+type Option func(*MoladinEvoPackage)
+
+func NewMoladinEvo(options ...Option) *MoladinEvoPackage {
+	moladinEvoPkg := &MoladinEvoPackage{
+		client: gorequest.New(),
+	}
+
+	for _, option := range options {
+		option(moladinEvoPkg)
+	}
+
+	return moladinEvoPkg
+}
+
+func (c *MoladinEvoPackage) Health(ctx context.Context) error {
 	const logCtx = "common.client.moladin_evo.Health"
 
-	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s", c.baseURL)).
+	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s", c.BaseURL)).
 		End()
 
 	if len(err) > 0 {
@@ -58,7 +69,7 @@ func (c *moladinEvo) Health(ctx context.Context) error {
 	return nil
 }
 
-func (c *moladinEvo) UserDetail(ctx context.Context, token string) (actLogModel.UserDetail, error) {
+func (c *MoladinEvoPackage) UserDetail(ctx context.Context, token string) (actLogModel.UserDetail, error) {
 	const logCtx = "common.client.moladin_evo.UserDetail"
 
 	type Response struct {
@@ -70,9 +81,9 @@ func (c *moladinEvo) UserDetail(ctx context.Context, token string) (actLogModel.
 	}
 
 	var res Response
-	_, _, err := c.client.Clone().Get(fmt.Sprintf("%s/%s", c.baseURL, "crm/account/user-management/detail")).
+	_, _, err := c.client.Clone().Get(fmt.Sprintf("%s/%s", c.BaseURL, "crm/account/user-management/detail")).
 		Set(constant.XRequestIdHeader, ctx.Value(constant.XRequestIdHeader).(string)).
-		Set(constant.XServiceNameHeader, c.xServicesName).
+		Set(constant.XServiceNameHeader, c.XServicesName).
 		Set("authorization", token).
 		EndStruct(&res)
 

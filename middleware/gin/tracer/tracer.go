@@ -1,4 +1,4 @@
-package gin
+package tracer
 
 import (
 	"context"
@@ -14,7 +14,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Tracer() gin.HandlerFunc {
+type IMiddlewareTracer interface {
+	Tracer() gin.HandlerFunc
+}
+
+type MiddlewareTracerPackage struct {
+	sentry commonSentry.ISentry
+}
+
+func WithSentry(sentry commonSentry.ISentry) Option {
+	return func(s *MiddlewareTracerPackage) {
+		s.sentry = sentry
+	}
+}
+
+type Option func(*MiddlewareTracerPackage)
+
+func NewTracer(
+	options ...Option,
+) IMiddlewareTracer {
+	middlewareTracerPackage := &MiddlewareTracerPackage{}
+	for _, option := range options {
+		option(middlewareTracerPackage)
+	}
+
+	return middlewareTracerPackage
+}
+
+func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 
 	const (
 		tagLatency = "latency"
@@ -55,7 +82,7 @@ func Tracer() gin.HandlerFunc {
 
 		logger.Info(ctxReq, `request`)
 
-		commonSentry.SetStartTransaction(
+		s.sentry.SetStartTransaction(
 			c.Request.Context(),
 			"middleware.Tracer",
 			fmt.Sprintf("%s %s", c.Request.Method, c.FullPath()),
