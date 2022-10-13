@@ -62,7 +62,7 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 		ctxReq = logger.AddLoggingTag(ctxReq, logger.Tag{Key: tagHeader, Value: c.Request.Header})
 		if c.Request.Method != http.MethodGet {
 			ctxReq = logger.AddLoggingTag(ctxReq, logger.Tag{Key: tagBody, Value: func() string {
-				reqBody, err := ioutil.ReadAll(c.Request.Body)
+				reqBody, err := ioutil.ReadAll(c.Copy().Request.Body)
 
 				if err != nil {
 					logger.Error(ctxReq, `error`, err)

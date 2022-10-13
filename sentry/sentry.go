@@ -1,3 +1,4 @@
+//go:generate mockery --name=ISentry
 package sentry
 
 import (
@@ -13,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type function func(ctx context.Context) (string, uint8)
+type Function func(ctx context.Context) (string, uint8)
 type Platform int
 type UserInfoSentry struct {
 	ID       string
@@ -60,9 +61,9 @@ type ISentry interface {
 		ctx context.Context,
 		spanName string,
 		transactionName string,
-		fn function,
+		fn Function,
 	)
-	Trace(ctx context.Context, spanName string, fn function)
+	Trace(ctx context.Context, spanName string, fn Function)
 	StartSpan(ctx context.Context, spanName string) *sentry.Span
 	Finish(span *sentry.Span)
 	SetTag(sentrySpan *sentry.Span, name string, value string)
@@ -101,7 +102,7 @@ func (s *SentryPackage) SetStartTransaction(
 	ctx context.Context,
 	spanName string,
 	transactionName string,
-	fn function,
+	fn Function,
 ) {
 	span := sentry.StartSpan(ctx, spanName, sentry.TransactionName(transactionName))
 	defer span.Finish()
@@ -115,7 +116,7 @@ func (s *SentryPackage) SetStartTransaction(
 }
 
 // Trace is used to describe each operation
-func (s *SentryPackage) Trace(ctx context.Context, spanName string, fn function) {
+func (s *SentryPackage) Trace(ctx context.Context, spanName string, fn Function) {
 	span := sentry.StartSpan(ctx, spanName)
 	defer span.Finish()
 	fn(span.Context())
