@@ -1,6 +1,7 @@
 package tracer
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -51,8 +52,6 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 		tagHeader  = "header"
 		tagType    = "type"
 		tagMethod  = "method"
-
-		limitBodySize = (1024 * 512) // 512KB
 	)
 	return func(c *gin.Context) {
 		// trace when request is getting started
@@ -62,21 +61,23 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 		ctxReq = logger.AddLoggingTag(ctxReq, logger.Tag{Key: tagHeader, Value: c.Request.Header})
 		if c.Request.Method != http.MethodGet {
 			ctxReq = logger.AddLoggingTag(ctxReq, logger.Tag{Key: tagBody, Value: func() string {
-				reqBody, err := ioutil.ReadAll(c.Copy().Request.Body)
-
-				if err != nil {
-					logger.Error(ctxReq, `error`, err)
+				// Read the content
+				var bodyBytes []byte
+				var err error
+				if c.Request.Body != nil {
+					bodyBytes, err = ioutil.ReadAll(c.Request.Body)
+					if err != nil {
+						logger.Error(ctxReq, `error`, err)
+					}
 				}
+				// Restore the io.ReadCloser to its original state
+				c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-				if len(reqBody) > limitBodySize {
-					// encode to base64
-					var encodedBody []byte
-					base64.StdEncoding.Encode(encodedBody, reqBody)
+				// encode to base64
+				encodedData := make([]byte, base64.StdEncoding.EncodedLen(len(bodyBytes)))
+				base64.StdEncoding.Encode(encodedData, bodyBytes)
 
-					return string(encodedBody)
-				}
-
-				return string(reqBody)
+				return string(bodyBytes)
 			}()})
 		}
 

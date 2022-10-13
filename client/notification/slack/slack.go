@@ -33,7 +33,7 @@ func WithSlackConfigNotificationSlackTimeoutInSeconds(slackConfigNotificationSla
 }
 func WithSlackConfigURL(slackConfigURL string) Option {
 	return func(s *SlackPackage) {
-		s.slackConfigChannel = slackConfigURL
+		s.slackConfigURL = slackConfigURL
 	}
 }
 func WithSlackConfigChannel(slackConfigChannel string) Option {
@@ -88,6 +88,7 @@ func NewSlack(
 	// TODO: Set auth (if any)
 	client.AppendHeader("accept", "application/json")
 	client.AppendHeader("Content-Type", "application/json")
+	slackPkg.client = client
 	return slackPkg
 }
 
