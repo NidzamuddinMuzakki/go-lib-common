@@ -7,15 +7,15 @@ import (
 
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	commonContext "bitbucket.org/moladinTech/go-lib-common/context"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
-type Function func(ctx context.Context) (string, uint8)
-type Platform int
 type UserInfoSentry struct {
 	ID       string
 	Username string
@@ -29,10 +29,10 @@ const (
 )
 
 type SentryPackage struct {
-	Dsn        string
-	Debug      bool
-	Env        string
-	SampleRate float64
+	Dsn        string  `validate:"required"`
+	Debug      bool    `validate:"required"`
+	Env        string  `validate:"required"`
+	SampleRate float64 `validate:"required"`
 }
 
 func WithDsn(dsn string) Option {
@@ -61,9 +61,9 @@ type ISentry interface {
 		ctx context.Context,
 		spanName string,
 		transactionName string,
-		fn Function,
+		fn func(ctx context.Context) (string, uint8),
 	)
-	Trace(ctx context.Context, spanName string, fn Function)
+	Trace(ctx context.Context, spanName string, fn func(ctx context.Context, span *sentry.Span))
 	StartSpan(ctx context.Context, spanName string) *sentry.Span
 	Finish(span *sentry.Span)
 	SetTag(sentrySpan *sentry.Span, name string, value string)
@@ -77,24 +77,30 @@ type ISentry interface {
 type Option func(*SentryPackage)
 
 func NewSentry(
+	validator *validator.Validate,
 	options ...Option,
-) (ISentry, error) {
+) ISentry {
 	sentryPkg := &SentryPackage{}
 
 	for _, option := range options {
 		option(sentryPkg)
 	}
+	err := validator.Struct(sentryPkg)
+	if err != nil {
+		panic(commonValidator.ToErrResponse(err))
+	}
 
-	err := sentry.Init(sentry.ClientOptions{
+	err = sentry.Init(sentry.ClientOptions{
 		Dsn:              sentryPkg.Dsn,
 		Debug:            sentryPkg.Debug,
 		Environment:      sentryPkg.Env,
 		TracesSampleRate: sentryPkg.SampleRate,
 	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return sentryPkg, nil
+
+	return sentryPkg
 }
 
 // SetStartTransaction is used to describe each transaction
@@ -102,7 +108,7 @@ func (s *SentryPackage) SetStartTransaction(
 	ctx context.Context,
 	spanName string,
 	transactionName string,
-	fn Function,
+	fn func(ctx context.Context) (string, uint8),
 ) {
 	span := sentry.StartSpan(ctx, spanName, sentry.TransactionName(transactionName))
 	defer span.Finish()
@@ -116,10 +122,10 @@ func (s *SentryPackage) SetStartTransaction(
 }
 
 // Trace is used to describe each operation
-func (s *SentryPackage) Trace(ctx context.Context, spanName string, fn Function) {
+func (s *SentryPackage) Trace(ctx context.Context, spanName string, fn func(ctx context.Context, span *sentry.Span)) {
 	span := sentry.StartSpan(ctx, spanName)
 	defer span.Finish()
-	fn(span.Context())
+	fn(span.Context(), span)
 }
 
 func (s *SentryPackage) StartSpan(ctx context.Context, spanName string) *sentry.Span {

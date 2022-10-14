@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"bitbucket.org/moladinTech/go-lib-common/logger"
+	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 
-	"github.com/getsentry/sentry-go"
+	"github.com/go-playground/validator/v10"
 	"github.com/parnurzeal/gorequest"
 	"github.com/pkg/errors"
 )
@@ -20,25 +22,31 @@ type ISlack interface {
 }
 
 type SlackPackage struct {
-	slackConfigNotificationSlackTimeoutInSeconds int
-	slackConfigURL                               string
-	slackConfigChannel                           string
+	Sentry                                       sentry.ISentry `validate:"required"`
+	SlackConfigNotificationSlackTimeoutInSeconds int            `validate:"required"`
+	SlackConfigURL                               string         `validate:"required"`
+	SlackConfigChannel                           string         `validate:"required"`
 	client                                       *gorequest.SuperAgent
 }
 
+func WithSentry(sentry sentry.ISentry) Option {
+	return func(s *SlackPackage) {
+		s.Sentry = sentry
+	}
+}
 func WithSlackConfigNotificationSlackTimeoutInSeconds(slackConfigNotificationSlackTimeoutInSeconds int) Option {
 	return func(s *SlackPackage) {
-		s.slackConfigNotificationSlackTimeoutInSeconds = slackConfigNotificationSlackTimeoutInSeconds
+		s.SlackConfigNotificationSlackTimeoutInSeconds = slackConfigNotificationSlackTimeoutInSeconds
 	}
 }
 func WithSlackConfigURL(slackConfigURL string) Option {
 	return func(s *SlackPackage) {
-		s.slackConfigURL = slackConfigURL
+		s.SlackConfigURL = slackConfigURL
 	}
 }
 func WithSlackConfigChannel(slackConfigChannel string) Option {
 	return func(s *SlackPackage) {
-		s.slackConfigChannel = slackConfigChannel
+		s.SlackConfigChannel = slackConfigChannel
 	}
 }
 
@@ -75,6 +83,7 @@ var (
 type Option func(*SlackPackage)
 
 func NewSlack(
+	validator *validator.Validate,
 	options ...Option,
 ) ISlack {
 	slackPkg := &SlackPackage{}
@@ -84,19 +93,24 @@ func NewSlack(
 	}
 
 	client := gorequest.New()
-	client.Timeout(time.Duration(slackPkg.slackConfigNotificationSlackTimeoutInSeconds) * time.Second)
+	client.Timeout(time.Duration(slackPkg.SlackConfigNotificationSlackTimeoutInSeconds) * time.Second)
 	// TODO: Set auth (if any)
 	client.AppendHeader("accept", "application/json")
 	client.AppendHeader("Content-Type", "application/json")
 	slackPkg.client = client
+
+	err := validator.Struct(slackPkg)
+	if err != nil {
+		panic(commonValidator.ToErrResponse(err))
+	}
 	return slackPkg
 }
 
 func (c *SlackPackage) Health(ctx context.Context) error {
-	var span = sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackPing)
+	var span = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackPing)
 	defer span.Finish()
 
-	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s/%s", c.slackConfigURL, "health")).End()
+	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s/%s", c.SlackConfigURL, "health")).End()
 	if len(err) > 0 {
 		logger.Error(ctx, ErrHealthCheck.Error(), err[0], logger.Tag{Key: "logCtx", Value: LogCtxName.ClientNotificationSlackPing})
 		return ErrHealthCheck
@@ -113,13 +127,13 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 
 	var (
 		response Response
-		span     = sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackSend)
+		span     = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackSend)
 	)
 	defer span.Finish()
 
-	resp, _, err := c.client.Clone().Post(fmt.Sprintf("%s/%s", c.slackConfigURL, "slack")).
+	resp, _, err := c.client.Clone().Post(fmt.Sprintf("%s/%s", c.SlackConfigURL, "slack")).
 		SendStruct(Payload{
-			Channel: c.slackConfigChannel,
+			Channel: c.SlackConfigChannel,
 			Message: message,
 		}).
 		EndStruct(&response)

@@ -7,7 +7,7 @@ import (
 )
 
 func CORS() gin.HandlerFunc {
-	allowHeader := []string{
+	allowHeaders := []string{
 		"Content-Type",
 		"Content-Length",
 		"Accept-Encoding",
@@ -23,7 +23,7 @@ func CORS() gin.HandlerFunc {
 		"x-api-key",
 	}
 
-	allowMethod := []string{
+	allowMethods := []string{
 		"POST",
 		"OPTIONS",
 		"GET",
@@ -32,8 +32,8 @@ func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", strings.Join(allowHeader, ","))
-		c.Writer.Header().Set("Access-Control-Allow-Methods", strings.Join(allowMethod, ","))
+		c.Writer.Header().Set("Access-Control-Allow-Headers", strings.Join(allowHeaders, ","))
+		c.Writer.Header().Set("Access-Control-Allow-Methods", strings.Join(allowMethods, ","))
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)

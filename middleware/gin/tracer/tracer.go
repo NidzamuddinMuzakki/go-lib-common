@@ -1,3 +1,4 @@
+//go:generate mockery --name=IMiddlewareTracer
 package tracer
 
 import (
@@ -10,9 +11,11 @@ import (
 	"time"
 
 	"bitbucket.org/moladinTech/go-lib-common/logger"
-	commonSentry "bitbucket.org/moladinTech/go-lib-common/sentry"
+	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type IMiddlewareTracer interface {
@@ -20,18 +23,19 @@ type IMiddlewareTracer interface {
 }
 
 type MiddlewareTracerPackage struct {
-	sentry commonSentry.ISentry
+	Sentry sentry.ISentry `validate:"required"`
 }
 
-func WithSentry(sentry commonSentry.ISentry) Option {
+func WithSentry(sentry sentry.ISentry) Option {
 	return func(s *MiddlewareTracerPackage) {
-		s.sentry = sentry
+		s.Sentry = sentry
 	}
 }
 
 type Option func(*MiddlewareTracerPackage)
 
 func NewTracer(
+	validator *validator.Validate,
 	options ...Option,
 ) IMiddlewareTracer {
 	middlewareTracerPackage := &MiddlewareTracerPackage{}
@@ -39,6 +43,10 @@ func NewTracer(
 		option(middlewareTracerPackage)
 	}
 
+	err := validator.Struct(middlewareTracerPackage)
+	if err != nil {
+		panic(commonValidator.ToErrResponse(err))
+	}
 	return middlewareTracerPackage
 }
 
@@ -54,9 +62,13 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 		tagMethod  = "method"
 	)
 	return func(c *gin.Context) {
+		const logCtx = "common.middleware.gin.tracer.Tracer"
+		reqCtx := c.Request.Context()
+		span := s.Sentry.StartSpan(reqCtx, logCtx)
+		defer span.Finish()
 		// trace when request is getting started
 		start := time.Now()
-		ctxReq := logger.AddLoggingTag(c.Request.Context(), logger.Tag{Key: tagPath, Value: c.Request.URL.Path})
+		ctxReq := logger.AddLoggingTag(reqCtx, logger.Tag{Key: tagPath, Value: c.Request.URL.Path})
 		ctxReq = logger.AddLoggingTag(ctxReq, logger.Tag{Key: tagMethod, Value: c.Request.Method})
 		ctxReq = logger.AddLoggingTag(ctxReq, logger.Tag{Key: tagHeader, Value: c.Request.Header})
 		if c.Request.Method != http.MethodGet {
@@ -83,7 +95,7 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 
 		logger.Info(ctxReq, `request`)
 
-		s.sentry.SetStartTransaction(
+		s.Sentry.SetStartTransaction(
 			c.Request.Context(),
 			"middleware.Tracer",
 			fmt.Sprintf("%s %s", c.Request.Method, c.FullPath()),
@@ -95,11 +107,11 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 
 				switch c.Writer.Status() / 100 {
 				case 2:
-					statusSpan = uint8(commonSentry.STATUS_OK)
+					statusSpan = uint8(sentry.STATUS_OK)
 				case 4:
-					statusSpan = uint8(commonSentry.STATUS_INVALID_ARGUMENT)
+					statusSpan = uint8(sentry.STATUS_INVALID_ARGUMENT)
 				case 5:
-					statusSpan = uint8(commonSentry.STATUS_INTERNAL_SERVER_ERROR)
+					statusSpan = uint8(sentry.STATUS_INTERNAL_SERVER_ERROR)
 				}
 				return status, statusSpan
 			},

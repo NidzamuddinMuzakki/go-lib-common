@@ -1,4 +1,5 @@
-package client
+//go:generate mockery --name=IMoladinEvo
+package moladin_evo
 
 import (
 	"context"
@@ -7,23 +8,27 @@ import (
 
 	actLogModel "bitbucket.org/moladinTech/go-lib-activity-log/model"
 	"bitbucket.org/moladinTech/go-lib-common/constant"
+	commonContext "bitbucket.org/moladinTech/go-lib-common/context"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
-
+	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/parnurzeal/gorequest"
 	"github.com/pkg/errors"
 )
 
 var ErrHealthCheck = errors.New("failed health check moladin-evo")
 
-type MoladinEvo interface {
+type IMoladinEvo interface {
 	Health(ctx context.Context) error
 	UserDetail(ctx context.Context, token string) (actLogModel.UserDetail, error)
 }
 
 type MoladinEvoPackage struct {
 	client        *gorequest.SuperAgent
-	BaseURL       string
-	XServicesName string
+	Sentry        sentry.ISentry `validate:"required"`
+	BaseURL       string         `validate:"required"`
+	XServicesName string         `validate:"required"`
 }
 
 func WithBaseUrl(baseUrl string) Option {
@@ -36,10 +41,19 @@ func WithServicesName(servicesName string) Option {
 		s.XServicesName = servicesName
 	}
 }
+func WithSentry(sentry sentry.ISentry) Option {
+	return func(s *MoladinEvoPackage) {
+		s.Sentry = sentry
+	}
+}
 
 type Option func(*MoladinEvoPackage)
 
-func NewMoladinEvo(options ...Option) *MoladinEvoPackage {
+func NewMoladinEvo(
+	ctx context.Context,
+	validator *validator.Validate,
+	options ...Option,
+) *MoladinEvoPackage {
 	moladinEvoPkg := &MoladinEvoPackage{
 		client: gorequest.New(),
 	}
@@ -48,11 +62,18 @@ func NewMoladinEvo(options ...Option) *MoladinEvoPackage {
 		option(moladinEvoPkg)
 	}
 
+	err := validator.Struct(moladinEvoPkg)
+	if err != nil {
+		panic(commonValidator.ToErrResponse(err))
+	}
+
 	return moladinEvoPkg
 }
 
 func (c *MoladinEvoPackage) Health(ctx context.Context) error {
 	const logCtx = "common.client.moladin_evo.Health"
+	span := c.Sentry.StartSpan(ctx, logCtx)
+	defer span.Finish()
 
 	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s", c.BaseURL)).
 		End()
@@ -71,6 +92,8 @@ func (c *MoladinEvoPackage) Health(ctx context.Context) error {
 
 func (c *MoladinEvoPackage) UserDetail(ctx context.Context, token string) (actLogModel.UserDetail, error) {
 	const logCtx = "common.client.moladin_evo.UserDetail"
+	span := c.Sentry.StartSpan(ctx, logCtx)
+	defer span.Finish()
 
 	type Response struct {
 		Success      bool                   `json:"success"`
@@ -82,7 +105,7 @@ func (c *MoladinEvoPackage) UserDetail(ctx context.Context, token string) (actLo
 
 	var res Response
 	_, _, err := c.client.Clone().Get(fmt.Sprintf("%s/%s", c.BaseURL, "crm/account/user-management/detail")).
-		Set(constant.XRequestIdHeader, ctx.Value(constant.XRequestIdHeader).(string)).
+		Set(constant.XRequestIdHeader, commonContext.GetValueAsString(ctx, constant.XRequestIdHeader)).
 		Set(constant.XServiceNameHeader, c.XServicesName).
 		Set("authorization", token).
 		EndStruct(&res)

@@ -9,11 +9,13 @@ import (
 
 	"bitbucket.org/moladinTech/go-lib-common/logger"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/go-playground/validator/v10"
 )
 
 type S3 interface {
@@ -21,70 +23,70 @@ type S3 interface {
 }
 
 type S3Package struct {
-	s3                        *s3.S3
-	sentry                    sentry.ISentry
-	awsS3Region               string
-	awsS3AccessKeyID          string
-	awsS3SecretAccessKey      string
-	awsS3ARN                  string
-	awsS3ACL                  string
-	awsS3BucketName           string
-	awsS3PresignTimeInMinutes uint
+	S3                        *s3.S3
+	Sentry                    sentry.ISentry `validate:"required"`
+	AwsS3Region               string         `validate:"required"`
+	AwsS3AccessKeyID          string         `validate:"required"`
+	AwsS3SecretAccessKey      string         `validate:"required"`
+	AwsS3ARN                  string         `validate:"required"`
+	AwsS3ACL                  string         `validate:"required"`
+	AwsS3BucketName           string         `validate:"required"`
+	AwsS3PresignTimeInMinutes uint           `validate:"required"`
 }
 
 type Option func(*S3Package)
 
 func WithS3(s3 *s3.S3) Option {
 	return func(s *S3Package) {
-		s.s3 = s3
+		s.S3 = s3
 	}
 }
 func WithSentry(sentry sentry.ISentry) Option {
 	return func(s *S3Package) {
-		s.sentry = sentry
+		s.Sentry = sentry
 	}
 }
 func WithAwsS3Region(awsS3Region string) Option {
 	return func(s *S3Package) {
-		s.awsS3Region = awsS3Region
+		s.AwsS3Region = awsS3Region
 	}
 }
 func WithAwsS3AccessKeyID(awsS3AccessKeyID string) Option {
 	return func(s *S3Package) {
-		s.awsS3AccessKeyID = awsS3AccessKeyID
+		s.AwsS3AccessKeyID = awsS3AccessKeyID
 	}
 }
 func WithAwsS3SecretAccessKey(awsS3SecretAccessKey string) Option {
 	return func(s *S3Package) {
-		s.awsS3SecretAccessKey = awsS3SecretAccessKey
+		s.AwsS3SecretAccessKey = awsS3SecretAccessKey
 	}
 }
 func WithAwsS3Arn(awsS3ARN string) Option {
 	return func(s *S3Package) {
-		s.awsS3ARN = awsS3ARN
+		s.AwsS3ARN = awsS3ARN
 	}
 }
 func WithAwsS3ACL(awsS3ACL string) Option {
 	return func(s *S3Package) {
-		s.awsS3ACL = awsS3ACL
+		s.AwsS3ACL = awsS3ACL
 	}
 }
 func WithAwsS3BucketName(awsS3BucketName string) Option {
 	return func(s *S3Package) {
-		s.awsS3BucketName = awsS3BucketName
+		s.AwsS3BucketName = awsS3BucketName
 	}
 }
 func WithAwsS3PresignTimeInMinutes(awsS3PresignTimeInMinutes uint) Option {
 	return func(s *S3Package) {
-		s.awsS3PresignTimeInMinutes = awsS3PresignTimeInMinutes
+		s.AwsS3PresignTimeInMinutes = awsS3PresignTimeInMinutes
 	}
 }
 
-func New(
+func NewS3(
 	ctx context.Context,
+	validator *validator.Validate,
 	options ...Option,
-) (*S3Package, error) {
-	const logCtx = "S3Package.aws.s3.New"
+) *S3Package {
 
 	s3Pkg := &S3Package{}
 
@@ -94,17 +96,22 @@ func New(
 
 	s3, err := s3Pkg.createClient(ctx)
 	if err != nil {
-		logger.Error(ctx, "failed to create new aws s3 S3Package", err, logger.Tag{Key: "logCtx", Value: logCtx})
-		return nil, err
+		panic(err)
 	}
+
 	optionS3 := WithS3(s3)
 	optionS3(s3Pkg)
 
-	return s3Pkg, nil
+	err = validator.Struct(s3Pkg)
+	if err != nil {
+		panic(commonValidator.ToErrResponse(err))
+	}
+
+	return s3Pkg
 }
 
 func (c *S3Package) createClient(ctx context.Context) (*s3.S3, error) {
-	const logCtx = "S3Package.aws.s3.createClient"
+	const logCtx = "common.client.aws.s3.createClient"
 
 	sess, err := session.NewSession()
 	if err != nil {
@@ -113,20 +120,20 @@ func (c *S3Package) createClient(ctx context.Context) (*s3.S3, error) {
 	}
 
 	awsConfig := &aws.Config{
-		Region:                        aws.String(c.awsS3Region),
+		Region:                        aws.String(c.AwsS3Region),
 		CredentialsChainVerboseErrors: aws.Bool(true),
 	}
 
-	if c.awsS3AccessKeyID != "" && c.awsS3SecretAccessKey != "" {
+	if c.AwsS3AccessKeyID != "" && c.AwsS3SecretAccessKey != "" {
 		sess.Config.Credentials = credentials.NewStaticCredentials(
-			c.awsS3AccessKeyID,
-			c.awsS3SecretAccessKey,
+			c.AwsS3AccessKeyID,
+			c.AwsS3SecretAccessKey,
 			"", // a token will be created when the session it's used.
 		)
 	}
 
-	if c.awsS3ARN != "" {
-		sess.Config.Credentials = stscreds.NewCredentials(sess, c.awsS3ARN)
+	if c.AwsS3ARN != "" {
+		sess.Config.Credentials = stscreds.NewCredentials(sess, c.AwsS3ARN)
 	}
 
 	return s3.New(sess, awsConfig), nil
@@ -134,18 +141,17 @@ func (c *S3Package) createClient(ctx context.Context) (*s3.S3, error) {
 
 // UploadFileInByte to upload file in byte to S3
 func (c *S3Package) UploadFileInByte(ctx context.Context, path, fileName string, data []byte) (string, error) {
-	const logCtx = "S3Package.aws.s3.UploadFileInByte"
+	const logCtx = "common.client.aws.s3.UploadFileInByte"
 
 	var (
-		span        = c.sentry.StartSpan(ctx, logCtx)
+		span        = c.Sentry.StartSpan(ctx, logCtx)
 		contentType = "application/octet-stream"
 		size        = int64(len(data))
 	)
 	defer span.Finish()
-
-	reqPut, _ := c.s3.PutObjectRequest(&s3.PutObjectInput{
-		Bucket:        aws.String(c.awsS3BucketName),
-		ACL:           aws.String(c.awsS3ACL),
+	reqPut, _ := c.S3.PutObjectRequest(&s3.PutObjectInput{
+		Bucket:        aws.String(c.AwsS3BucketName),
+		ACL:           aws.String(c.AwsS3ACL),
 		Key:           aws.String(fmt.Sprintf("%s/%s", path, fileName)),
 		ContentLength: aws.Int64(size),
 		ContentType:   aws.String(contentType),
@@ -157,11 +163,11 @@ func (c *S3Package) UploadFileInByte(ctx context.Context, path, fileName string,
 		return "", err
 	}
 
-	reqGet, _ := c.s3.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(c.awsS3BucketName),
+	reqGet, _ := c.S3.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(c.AwsS3BucketName),
 		Key:    aws.String(fmt.Sprintf("%s/%s", path, fileName)),
 	})
-	urlStr, err := reqGet.Presign(time.Duration(c.awsS3PresignTimeInMinutes) * time.Minute)
+	urlStr, err := reqGet.Presign(time.Duration(c.AwsS3PresignTimeInMinutes) * time.Minute)
 	if err != nil {
 		logger.Error(ctx, "failed to presign url", err, logger.Tag{Key: "logCtx", Value: logCtx})
 		return "", err
