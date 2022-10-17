@@ -169,3 +169,7 @@ func (s *SentryPackage) HandlingPanic(err interface{}) {
 	sentry.CurrentHub().Recover(err)
 	sentry.Flush(time.Second * 5)
 }
+
+func Span() sentry.Span {
+	return sentry.Span{}
+}

@@ -44,6 +44,9 @@ func AddRequestID(ctx context.Context, msgID string) context.Context {
 
 // GetAllLoggingTagInTagStr to get all tag str from logging tag
 func GetAllLoggingTagInTagStr(ctx context.Context) []Tag {
+	if ctx == nil {
+		return nil
+	}
 	allTags := ctx.Value(LoggingTagKey)
 	contextTags, ok := allTags.(map[string]string)
 	if !ok || contextTags == nil {

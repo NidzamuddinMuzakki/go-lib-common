@@ -28,10 +28,10 @@ type S3Package struct {
 	AwsS3Region               string         `validate:"required"`
 	AwsS3AccessKeyID          string         `validate:"required"`
 	AwsS3SecretAccessKey      string         `validate:"required"`
-	AwsS3ARN                  string         `validate:"required"`
 	AwsS3ACL                  string         `validate:"required"`
 	AwsS3BucketName           string         `validate:"required"`
 	AwsS3PresignTimeInMinutes uint           `validate:"required"`
+	AwsS3ARN                  string
 }
 
 type Option func(*S3Package)
