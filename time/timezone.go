@@ -2,6 +2,7 @@ package time
 
 import (
 	"os"
+	"time"
 
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 )
@@ -14,4 +15,15 @@ func LoadTimeZoneFromEnv() string {
 		return constant.DefaultTimeZone
 	}
 	return tz
+}
+
+func LoadTimeZoneAsiaJakarta() *time.Location {
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		// we dont want this error to happen
+		//
+		// this should be never called
+		panic(err)
+	}
+	return loc
 }
