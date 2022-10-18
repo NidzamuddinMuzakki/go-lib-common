@@ -8,6 +8,9 @@ import (
 
 func CORS() gin.HandlerFunc {
 	allowHeaders := []string{
+		"sec-ch-ua",
+		"sec-ch-ua-mobile",
+		"sec-ch-ua-platform",
 		"Content-Type",
 		"Content-Length",
 		"Accept-Encoding",
@@ -19,7 +22,9 @@ func CORS() gin.HandlerFunc {
 		"X-Requested-With",
 		"X-Request-Id",
 		"X-Origin-Path",
+		"x-Service-Name",
 		"x-service-name",
+		"x-Api-Key",
 		"x-api-key",
 	}
 
