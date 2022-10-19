@@ -30,9 +30,9 @@ const (
 
 type SentryPackage struct {
 	Dsn        string  `validate:"required"`
-	Debug      bool    `validate:"required"`
 	Env        string  `validate:"required"`
 	SampleRate float64 `validate:"required"`
+	Debug      bool
 }
 
 func WithDsn(dsn string) Option {

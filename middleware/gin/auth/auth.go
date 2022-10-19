@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
 	"bitbucket.org/moladinTech/go-lib-activity-log/model"
@@ -18,13 +20,14 @@ import (
 type IMiddlewareAuth interface {
 	AuthToken() gin.HandlerFunc
 	AuthXApiKey() gin.HandlerFunc
+	Auth() gin.HandlerFunc
 }
 
 type MiddlewareAuthPackage struct {
-	Sentry           sentry.ISentry               `validate:"required"`
-	MoladinEvoClient moladinEvoClient.IMoladinEvo `validate:"required"`
-	ConfigApiKey     string                       `validate:"required"`
-	PermittedRoles   []string                     `validate:"required"`
+	Sentry           sentry.ISentry `validate:"required"`
+	MoladinEvoClient moladinEvoClient.IMoladinEvo
+	ConfigApiKey     string
+	PermittedRoles   []string
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -117,5 +120,60 @@ func (a *MiddlewareAuthPackage) AuthXApiKey() gin.HandlerFunc {
 			Email:  "system@moladin.com",
 		}))
 		c.Next()
+	}
+}
+
+func (a *MiddlewareAuthPackage) Auth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authorizationToken := c.GetHeader(constant.AuthorizationHeader)
+		xApiKey := c.GetHeader(constant.XApiKeyHeader)
+		xServiceName := c.GetHeader(constant.XServiceNameHeader)
+		if xApiKey == "" && xServiceName == "" && authorizationToken == "" {
+			c.JSON(http.StatusUnauthorized, response.Response{
+				Message: http.StatusText(http.StatusUnauthorized),
+				Status:  response.StatusFail,
+			})
+			c.Abort()
+			return
+		}
+
+		if authorizationToken != "" {
+			var (
+				token     = c.GetHeader(constant.AuthorizationHeader)
+				user, err = a.MoladinEvoClient.UserDetail(c.Request.Context(), token)
+			)
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, response.Response{
+					Message: http.StatusText(http.StatusUnauthorized),
+					Status:  response.StatusFail,
+				})
+				c.Abort()
+				return
+			}
+			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), constant.XUserDetail, user))
+			c.Next()
+			return
+		}
+
+		if xApiKey != "" && xServiceName != "" {
+			token := []byte(xServiceName + xServiceName)
+			validateKey := sha256.Sum256(token)
+			if xApiKey != hex.EncodeToString(validateKey[:]) {
+				c.JSON(http.StatusUnauthorized, response.Response{
+					Message: http.StatusText(http.StatusUnauthorized),
+					Status:  response.StatusFail,
+				})
+				c.Abort()
+				return
+			}
+			c.Next()
+			return
+		}
+
+		c.JSON(http.StatusUnauthorized, response.Response{
+			Message: http.StatusText(http.StatusUnauthorized),
+			Status:  response.StatusFail,
+		})
+		c.Abort()
 	}
 }
