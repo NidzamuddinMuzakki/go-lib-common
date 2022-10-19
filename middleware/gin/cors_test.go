@@ -32,6 +32,9 @@ var allowHeaderRules = []string{
 	"x-service-name",
 	"x-Api-Key",
 	"x-api-key",
+	"x-menu-slug",
+	"X-Menu-Slug",
+	"x-menu-test-additional",
 }
 
 func TestCors_ShouldSucceed(t *testing.T) {
@@ -42,7 +45,7 @@ func TestCors_ShouldSucceed(t *testing.T) {
 		gin.SetMode(gin.TestMode)
 		r := gin.Default()
 		r.Routes()
-		r.GET("/", middlewareGin.CORS())
+		r.GET("/", middlewareGin.CORS("x-menu-test-additional"))
 
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header = http.Header{}

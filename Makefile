@@ -20,7 +20,7 @@ test:
 		-race --count=1 -v -cover
 
 test-unit:
-	GOPRIVATE=bitbucket.org/moladinTech go test --tags unit \
+	GOPRIVATE=bitbucket.org/moladinTech go test -v --tags unit \
 		`go list ./... | grep -v mocks | grep -v docs` \
 		-race -short -coverprofile=./cov.out
 

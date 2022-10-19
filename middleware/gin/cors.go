@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CORS() gin.HandlerFunc {
+func CORS(additionalHeader ...string) gin.HandlerFunc {
 	allowHeaders := []string{
 		"sec-ch-ua",
 		"sec-ch-ua-mobile",
@@ -26,7 +26,12 @@ func CORS() gin.HandlerFunc {
 		"x-service-name",
 		"x-Api-Key",
 		"x-api-key",
+		"x-menu-slug",
+		"X-Menu-Slug",
 	}
+
+	// append additional header from config
+	allowHeaders = append(allowHeaders, additionalHeader...)
 
 	allowMethods := []string{
 		"POST",
