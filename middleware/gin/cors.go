@@ -12,22 +12,37 @@ func CORS(additionalHeader ...string) gin.HandlerFunc {
 		"sec-ch-ua-mobile",
 		"sec-ch-ua-platform",
 		"Content-Type",
+		"content-type",
 		"Content-Length",
-		"Accept-Encoding",
-		"X-CSRF-Token",
-		"Authorization",
+		"content-length",
+		"Accept",
 		"accept",
+		"Origin",
 		"origin",
+		"Referer",
+		"referer",
+		"User-Agent",
+		"user-agent",
+		"Accept-Encoding",
+		"accept-encoding",
+		"X-CSRF-Token",
+		"x-csrf-token",
+		"Authorization",
+		"authorization",
 		"Cache-Control",
+		"cache-control",
 		"X-Requested-With",
+		"x-requested-with",
 		"X-Request-Id",
+		"x-request-id",
 		"X-Origin-Path",
+		"x-origin-path",
 		"x-Service-Name",
 		"x-service-name",
 		"x-Api-Key",
 		"x-api-key",
-		"x-menu-slug",
 		"X-Menu-Slug",
+		"x-menu-slug",
 	}
 
 	// append additional header from config
@@ -35,10 +50,13 @@ func CORS(additionalHeader ...string) gin.HandlerFunc {
 
 	allowMethods := []string{
 		"POST",
-		"OPTIONS",
 		"GET",
 		"PUT",
+		"PATCH",
+		"DELETE",
+		"OPTIONS",
 	}
+
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
