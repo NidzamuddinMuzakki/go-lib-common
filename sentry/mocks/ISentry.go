@@ -93,6 +93,22 @@ func (_m *ISentry) SetUserInfo(u go_lib_commonsentry.UserInfoSentry) {
 	_m.Called(u)
 }
 
+// SpanContext provides a mock function with given fields: span
+func (_m *ISentry) SpanContext(span sentry.Span) context.Context {
+	ret := _m.Called(span)
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func(sentry.Span) context.Context); ok {
+		r0 = rf(span)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
+}
+
 // StartSpan provides a mock function with given fields: ctx, spanName
 func (_m *ISentry) StartSpan(ctx context.Context, spanName string) *sentry.Span {
 	ret := _m.Called(ctx, spanName)

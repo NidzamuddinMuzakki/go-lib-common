@@ -72,6 +72,7 @@ type ISentry interface {
 	Flush(timeout time.Duration) bool
 	SetUserInfo(u UserInfoSentry)
 	HandlingPanic(err interface{})
+	SpanContext(span sentry.Span) context.Context
 }
 
 type Option func(*SentryPackage)
@@ -172,4 +173,8 @@ func (s *SentryPackage) HandlingPanic(err interface{}) {
 
 func Span() sentry.Span {
 	return sentry.Span{}
+}
+
+func (s *SentryPackage) SpanContext(span sentry.Span) context.Context {
+	return span.Context()
 }
