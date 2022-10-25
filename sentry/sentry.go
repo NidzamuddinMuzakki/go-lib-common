@@ -152,7 +152,7 @@ func (s *SentryPackage) GetGinMiddleware() gin.HandlerFunc {
 }
 
 func (s *SentryPackage) Flush(timeout time.Duration) bool {
-	return sentry.Flush(2 * time.Second)
+	return sentry.Flush(timeout * time.Second)
 }
 
 // SetUserInfo is used to describe user information

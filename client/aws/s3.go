@@ -36,7 +36,7 @@ type S3Package struct {
 
 type Option func(*S3Package)
 
-func WithS3(s3 *s3.S3) Option {
+func withS3(s3 *s3.S3) Option {
 	return func(s *S3Package) {
 		s.S3 = s3
 	}
@@ -99,7 +99,7 @@ func NewS3(
 		panic(err)
 	}
 
-	optionS3 := WithS3(s3)
+	optionS3 := withS3(s3)
 	optionS3(s3Pkg)
 
 	err = validator.Struct(s3Pkg)

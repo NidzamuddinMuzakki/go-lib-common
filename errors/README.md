@@ -13,9 +13,9 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
         ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
     )
 
-    sql, args, err := recon.ToSql()
+    sql, args, err := squirrel.ToSql()
 	if err != nil {
-        // will wrap error from recon.ToSql() with  ErrSQLQueryBuilder
+        // will wrap error from squirrel.ToSql() with  ErrSQLQueryBuilder
 		return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
 	}
 
@@ -33,7 +33,7 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
 
     sql, args, err := ToSql(query)
 	if err != nil {
-        // will wrap error from recon.ToSql() and will get the stack trace
+        // will wrap error from squirrel.ToSql() and will get the stack trace
         // will be usefull when you need to know who is the caller
 		return nil, 0, liberrors.Wrap(err, ErrSQLQueryBuilder)
 	}
@@ -50,7 +50,7 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
 
     sql, args, err := ToSql(query)
 	if err != nil {
-        // will wrap error from recon.ToSql() and will get the stack trace
+        // will wrap error from squirrel.ToSql() and will get the stack trace
         // will be usefull when you need to know who is the caller
 		errWrapped = liberrors.Wrap(err, ErrSQLQueryBuilder)
 	}
@@ -69,9 +69,9 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
         ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
     )
 
-    sql, args, err := recon.ToSql()
+    sql, args, err := squirrel.ToSql()
 	if err != nil {
-        // will wrap error from recon.ToSql() with  ErrSQLQueryBuilder
+        // will wrap error from squirrel.ToSql() with  ErrSQLQueryBuilder
 		errWrapped = liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
 	}
 
@@ -109,9 +109,9 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
 
     // and then we have this function
 
-    sql, args, err := recon.ToSql()
+    sql, args, err := squirrel.ToSql()
 	if err != nil {
-        // will wrap error from recon.ToSql() with  ErrSQLQueryBuilder
+        // will wrap error from squirrel.ToSql() with  ErrSQLQueryBuilder
 		errWrapped = liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
 	}
 
@@ -136,9 +136,9 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
         ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
     )
 
-    sql, args, err := recon.ToSql()
+    sql, args, err := squirrel.ToSql()
 	if err != nil {
-        // will wrap error from recon.ToSql() with  ErrSQLQueryBuilder
+        // will wrap error from squirrel.ToSql() with  ErrSQLQueryBuilder
 		errWrapped := liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
 	}
 
@@ -159,9 +159,9 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
         ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
     )
 
-    sql, args, err := recon.ToSql()
+    sql, args, err := squirrel.ToSql()
 	if err != nil {
-        // will wrap error from recon.ToSql() with  ErrSQLQueryBuilder
+        // will wrap error from squirrel.ToSql() with  ErrSQLQueryBuilder
 		errWrapped := liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
 	}
 
