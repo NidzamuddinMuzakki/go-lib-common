@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/exp/slices"
