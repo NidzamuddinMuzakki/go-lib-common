@@ -90,3 +90,38 @@ What's got in this package.
         ),
     )
 ```
+
+### Using WithTx
+*note: for each repository must have same database
+ ```go
+   // main.go
+   ...
+   transaction := data_source.NewTransaction(db)
+   repositoryRegistry := repository.NewRegistry(db)
+   ...
+   // repository/registry.go
+   ...
+   func NewRegistry(transaction) {
+     return &registry{
+         transaction: transaction
+     }
+   }
+   ...
+   // service/user.go
+   ...
+   txFunc   := TxFunc(func(tx *sqlx.Tx) error {
+     user, err := repository.user.Create(ctx, tx, user)
+     if err != nil {
+         return err
+     }
+     role, err := repository.role.Create(ctx, tx, role)
+     if err != nil {
+        return err
+     }
+   })
+   err := repository.transaction.WithTx(ctx, txFunc, nil)
+   if err != nil {
+     return err
+   }
+   ...
+```
