@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"bitbucket.org/moladinTech/go-lib-common/cache"
 	"bitbucket.org/moladinTech/go-lib-common/client/aws"
 	"bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
@@ -22,6 +23,7 @@ type IRegistry interface {
 	GetTraceMiddleware() tracer.IMiddlewareTracer
 	GetTime() time.TimeItf
 	GetValidator() *validator.Validate
+	GetCache() cache.Cacher
 }
 
 type registry struct {
@@ -34,6 +36,7 @@ type registry struct {
 	tracerMiddleware        tracer.IMiddlewareTracer
 	time                    time.TimeItf
 	validator               *validator.Validate
+	cache                   cache.Cacher
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -90,6 +93,12 @@ func WithValidator(validator *validator.Validate) Option {
 	}
 }
 
+func WithCache(cache cache.Cacher) Option {
+	return func(s *registry) {
+		s.cache = cache
+	}
+}
+
 type Option func(r *registry)
 
 func NewRegistry(
@@ -138,4 +147,8 @@ func (r *registry) GetTime() time.TimeItf {
 
 func (r *registry) GetValidator() *validator.Validate {
 	return r.validator
+}
+
+func (r *registry) GetCache() cache.Cacher {
+	return r.cache
 }
