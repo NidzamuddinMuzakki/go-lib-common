@@ -86,6 +86,7 @@ func (s *Statement) Debug() *Statement {
 // exec Execute the statement within supplied transaction and update the
 // destination if not nil.
 func (s *Statement) exec(ctx context.Context, stmt *sqlx.Stmt) error {
+	defer stmt.Close()
 	var err error
 
 	// destination nil it's mean statement doesn't need result
