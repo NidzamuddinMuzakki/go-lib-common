@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
@@ -65,7 +66,7 @@ func (p *MiddlewarePanicRecoveryPackage) PanicRecoveryMiddleware() gin.HandlerFu
 
 			if pnc := recover(); pnc != nil {
 				errStr := fmt.Sprintf("panic: %v", pnc)
-				logger.Error(reqCtx, logCtx, errors.New(errStr))
+				logger.Error(reqCtx, logCtx, errors.New(errStr), logger.Tag{Key: "debug", Value: string(debug.Stack())})
 				responseMsg := "Server error. Contact admin for more information."
 				if p.ConfigEnv != constant.EnvProduction {
 					responseMsg = errStr
