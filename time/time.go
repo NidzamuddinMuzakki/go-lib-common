@@ -47,3 +47,11 @@ func (b DateTime) MarshalJSON() ([]byte, error) {
 func (b DateTime) Value() (driver.Value, error) {
 	return json.Marshal(b)
 }
+
+func GetValue(time *time.Time) *DateTime {
+	if time == nil {
+		return nil
+	}
+	date := DateTime(*time)
+	return &date
+}
