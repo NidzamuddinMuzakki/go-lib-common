@@ -48,10 +48,18 @@ func (b DateTime) Value() (driver.Value, error) {
 	return json.Marshal(b)
 }
 
-func GetValue(time *time.Time) *DateTime {
-	if time == nil {
+func GetValue(val interface{}, loc *time.Location) *DateTime {
+	switch v := val.(type) {
+	case time.Time:
+		date := DateTime(v.In(loc))
+		return &date
+	case *time.Time:
+		if v != nil {
+			date := DateTime(v.In(loc))
+			return &date
+		}
+		return nil
+	default:
 		return nil
 	}
-	date := DateTime(*time)
-	return &date
 }
