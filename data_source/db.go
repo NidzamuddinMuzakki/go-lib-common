@@ -83,3 +83,17 @@ func GetDbColumnsAndValue(data any, excluded ...string) map[string]interface{} {
 	}
 	return res
 }
+
+func GetDbColumns(data any, excluded ...string) []string {
+	v := reflect.ValueOf(data)
+	typeOfS := v.Type()
+
+	res := make([]string, 0)
+	for i := 0; i < v.NumField(); i++ {
+		columName := typeOfS.Field(i).Tag.Get("db")
+		if !slices.Contains(excluded, columName) {
+			res = append(res, columName)
+		}
+	}
+	return res
+}
