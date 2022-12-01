@@ -2,9 +2,10 @@ package cache
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 type Key string
@@ -18,6 +19,7 @@ type Cacher interface {
 	Set(ctx context.Context, data Data, duration time.Duration) error
 	Get(ctx context.Context, key Key, dest any) error
 	Delete(ctx context.Context, key Key) error
+	BatchSet(ctx context.Context, datas []Data, duration time.Duration) error
 }
 
 type Driver string

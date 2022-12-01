@@ -42,3 +42,26 @@ func (r *Redis) Get(ctx context.Context, key Key, dest any) error {
 func (r *Redis) Delete(ctx context.Context, key Key) error {
 	return r.client.Del(ctx, string(key)).Err()
 }
+
+func (r *Redis) BatchSet(ctx context.Context, datas []Data, duration time.Duration) error {
+	pipe := r.client.Pipeline()
+	var err error
+	defer func() {
+		if err != nil {
+			_ = pipe.Close()
+		}
+	}()
+	for _, data := range datas {
+		if err = pipe.Set(ctx, string(data.Key), data.Value, duration).Err(); err != nil {
+
+			return err
+		}
+	}
+
+	if _, err = pipe.Exec(ctx); err != nil {
+		return err
+	}
+
+	return nil
+
+}

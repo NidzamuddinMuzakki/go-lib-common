@@ -77,3 +77,17 @@ func (im *InMemory) Delete(_ context.Context, key Key) error {
 
 	return nil
 }
+
+func (im *InMemory) BatchSet(_ context.Context, datas []Data, duration time.Duration) error {
+
+	for _, data := range datas {
+		im.mu.Lock()
+		im.data[data.Key] = MemoryData{
+			Value: data.Value,
+			TTL:   time.Now().Add(duration),
+		}
+		im.mu.Unlock()
+	}
+
+	return nil
+}
