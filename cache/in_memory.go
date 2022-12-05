@@ -91,3 +91,7 @@ func (im *InMemory) BatchSet(_ context.Context, datas []Data, duration time.Dura
 
 	return nil
 }
+
+func (im *InMemory) BatchGet(ctx context.Context, keys []Key, dest any) error {
+	panic("IMPLEMENT ME!")
+}

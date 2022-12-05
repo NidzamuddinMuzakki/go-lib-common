@@ -3,6 +3,8 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -24,7 +26,11 @@ func NewRedis(host, password string, db int) *Redis {
 }
 
 func (r *Redis) Set(ctx context.Context, data Data, duration time.Duration) error {
-	return r.client.Set(ctx, string(data.Key), data.Value, duration).Err()
+	raw, err := json.Marshal(data.Value)
+	if err != nil {
+		return err
+	}
+	return r.client.Set(ctx, string(data.Key), raw, duration).Err()
 }
 
 func (r *Redis) Get(ctx context.Context, key Key, dest any) error {
@@ -52,7 +58,11 @@ func (r *Redis) BatchSet(ctx context.Context, datas []Data, duration time.Durati
 		}
 	}()
 	for _, data := range datas {
-		if err = pipe.Set(ctx, string(data.Key), data.Value, duration).Err(); err != nil {
+		raw, err := json.Marshal(data.Value)
+		if err != nil {
+			return err
+		}
+		if err = pipe.Set(ctx, string(data.Key), raw, duration).Err(); err != nil {
 
 			return err
 		}
@@ -60,6 +70,54 @@ func (r *Redis) BatchSet(ctx context.Context, datas []Data, duration time.Durati
 
 	if _, err = pipe.Exec(ctx); err != nil {
 		return err
+	}
+
+	return nil
+
+}
+
+func (r *Redis) BatchGet(ctx context.Context, keys []Key, dest any) error {
+	pipeline := r.client.Pipeline()
+
+	strCmds := make([]*redis.StringCmd, 0, len(keys))
+	for _, key := range keys {
+		strCmds = append(strCmds, pipeline.Get(ctx, string(key)))
+	}
+
+	if _, err := pipeline.Exec(ctx); err != nil {
+		return err
+	}
+
+	switch v := dest.(type) {
+	case map[string]struct{}:
+		// only need its key is it available or not
+		for idx, strCmd := range strCmds {
+			if _, err := strCmd.Result(); err != nil && err != redis.Nil {
+				return err
+			} else {
+				v[string(keys[idx])] = struct{}{}
+			}
+		}
+	default:
+		switch reflect.TypeOf(dest).Elem().Kind() {
+		case reflect.Slice, reflect.Array:
+			stringRes := make([]string, 0, len(strCmds))
+			for _, strCmd := range strCmds {
+				if res, err := strCmd.Result(); err != nil && err != redis.Nil {
+					return err
+				} else {
+					stringRes = append(stringRes, res)
+				}
+			}
+
+			stringJson := `[ ` + strings.Join(stringRes, ",") + ` ]`
+
+			err := json.Unmarshal([]byte(stringJson), dest)
+			if err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil

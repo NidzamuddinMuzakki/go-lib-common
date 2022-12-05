@@ -22,6 +22,8 @@ definitions:
         POSTGRES_DB: "pipelines"
         POSTGRES_USER: "user"
         POSTGRES_PASSWORD: "password"
+    redis:
+      image: redis
 
   steps:
     - step: &unit-test
@@ -41,6 +43,7 @@ definitions:
         size: 2x
         services:
           - postgres
+          - redis
         caches: *gomod-cache
         script:
           - echo 'Integration Test'

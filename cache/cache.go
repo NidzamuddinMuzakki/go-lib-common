@@ -20,6 +20,7 @@ type Cacher interface {
 	Get(ctx context.Context, key Key, dest any) error
 	Delete(ctx context.Context, key Key) error
 	BatchSet(ctx context.Context, datas []Data, duration time.Duration) error
+	BatchGet(ctx context.Context, keys []Key, dest any) error
 }
 
 type Driver string
