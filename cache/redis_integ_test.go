@@ -40,8 +40,13 @@ func TestRedis(t *testing.T) {
 
 	testStructs, testKeys := generateTestKeyAndVal()
 
+	testBatchGetNil(t, redis, testKeys)
 	testBatchSet(t, redis, testStructs)
 	testBatchGet(t, redis, testKeys)
+
+	testKeys = append(testKeys, Key("none key"))
+	testBatchGet(t, redis, testKeys)
+	testBatchGetUseSet(t, redis, testKeys)
 
 	testData := Data{
 		Key:   Key("testKey"),
@@ -71,6 +76,28 @@ func testBatchGet(t *testing.T, redis *Redis, testKeys []Key) {
 	for i := 0; i < 10; i++ {
 		assert.Equal(t, fmt.Sprint(i), dest[i].Name)
 	}
+}
+
+func testBatchGetUseSet(t *testing.T, redis *Redis, testKeys []Key) {
+	dest := make(map[string]struct{})
+
+	err := redis.BatchGet(context.Background(), testKeys, dest)
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 10, len(dest))
+
+	for i := 0; i < 10; i++ {
+		_, ok := dest[fmt.Sprint(i)]
+		assert.Equal(t, true, ok)
+	}
+}
+
+func testBatchGetNil(t *testing.T, redis *Redis, testKeys []Key) {
+	dest := []TestStruct{}
+
+	err := redis.BatchGet(context.Background(), testKeys, &dest)
+
+	assert.Equal(t, nil, err)
 }
 
 func testSet(t *testing.T, redis *Redis, test Data) {

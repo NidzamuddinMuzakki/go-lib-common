@@ -85,29 +85,51 @@ func (r *Redis) BatchGet(ctx context.Context, keys []Key, dest any) error {
 	}
 
 	if _, err := pipeline.Exec(ctx); err != nil {
-		return err
+		if err != redis.Nil {
+			return err
+		}
 	}
 
 	switch v := dest.(type) {
 	case map[string]struct{}:
 		// only need its key is it available or not
 		for idx, strCmd := range strCmds {
-			if _, err := strCmd.Result(); err != nil && err != redis.Nil {
+			var (
+				err error
+			)
+
+			if _, err = strCmd.Result(); err != nil && err != redis.Nil {
 				return err
-			} else {
-				v[string(keys[idx])] = struct{}{}
 			}
+
+			if err == redis.Nil {
+				continue
+			}
+
+			v[string(keys[idx])] = struct{}{}
 		}
 	default:
 		switch reflect.TypeOf(dest).Elem().Kind() {
 		case reflect.Slice, reflect.Array:
 			stringRes := make([]string, 0, len(strCmds))
 			for _, strCmd := range strCmds {
-				if res, err := strCmd.Result(); err != nil && err != redis.Nil {
+				var (
+					res string
+					err error
+				)
+				if res, err = strCmd.Result(); err != nil && err != redis.Nil {
 					return err
-				} else {
-					stringRes = append(stringRes, res)
 				}
+
+				if err == redis.Nil {
+					continue
+				}
+
+				stringRes = append(stringRes, res)
+			}
+
+			if len(stringRes) == 0 {
+				return nil
 			}
 
 			stringJson := `[ ` + strings.Join(stringRes, ",") + ` ]`
