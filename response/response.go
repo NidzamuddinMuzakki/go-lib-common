@@ -1,5 +1,11 @@
 package response
 
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
 const (
 	StatusSuccess = "success"
 	StatusFail    = "fail"
@@ -18,4 +24,15 @@ type Response struct {
 	NextPage     uint   `json:"nextPage,omitempty"`
 	PreviousPage uint   `json:"previousPage,omitempty"`
 	TotalPages   uint   `json:"totalPages,omitempty"`
+}
+
+// RouteNotFound handle when user is hitting non-exist endpoint.
+// It will imediately return error 404 not found.
+func RouteNotFound(e *gin.Engine) {
+	e.NoRoute(func(ctx *gin.Context) {
+		ctx.JSON(http.StatusNotFound, Response{
+			Message: http.StatusText(http.StatusNotFound),
+			Status:  StatusFail,
+		})
+	})
 }
