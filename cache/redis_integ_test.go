@@ -35,40 +35,49 @@ func generateTestKeyAndVal() ([]Data, []Key) {
 
 }
 
-func TestRedis(t *testing.T) {
-	redis := NewRedis("localhost:6379", "", 0)
+func TestCache(t *testing.T) {
+	redis, err := NewCache(WitHost("localhost:6379"), WitDatabase("0"), WitDriver(RedisDriver), WitPassword(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	inmemory, err := NewCache(WitDriver(InMemoryDriver))
+	testCache_(t, redis)
+	testCache_(t, inmemory)
+}
+
+func testCache_(t *testing.T, cache Cacher) {
 
 	testStructs, testKeys := generateTestKeyAndVal()
 
-	testBatchGetNil(t, redis, testKeys)
-	testBatchSet(t, redis, testStructs)
-	testBatchGet(t, redis, testKeys)
+	testBatchGetNil(t, cache, testKeys)
+	testBatchSet(t, cache, testStructs)
+	testBatchGet(t, cache, testKeys)
 
 	testKeys = append(testKeys, Key("none key"))
-	testBatchGet(t, redis, testKeys)
-	testBatchGetUseSet(t, redis, testKeys)
+	testBatchGet(t, cache, testKeys)
+	testBatchGetUseSet(t, cache, testKeys)
 
 	testData := Data{
 		Key:   Key("testKey"),
 		Value: TestStruct{"test"},
 	}
 
-	testSet(t, redis, testData)
-	testGet(t, redis, testData.Key)
-
+	testSet(t, cache, testData)
+	testGet(t, cache, testData.Key)
 }
 
-func testBatchSet(t *testing.T, redis *Redis, testStructs []Data) {
-	err := redis.BatchSet(context.TODO(), testStructs, time.Second)
+func testBatchSet(t *testing.T, cache Cacher, testStructs []Data) {
+	err := cache.BatchSet(context.TODO(), testStructs, time.Second)
 
 	assert.Equal(t, nil, err)
 
 }
 
-func testBatchGet(t *testing.T, redis *Redis, testKeys []Key) {
+func testBatchGet(t *testing.T, cache Cacher, testKeys []Key) {
 	dest := []TestStruct{}
 
-	err := redis.BatchGet(context.Background(), testKeys, &dest)
+	err := cache.BatchGet(context.Background(), testKeys, &dest)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 10, len(dest))
@@ -78,10 +87,10 @@ func testBatchGet(t *testing.T, redis *Redis, testKeys []Key) {
 	}
 }
 
-func testBatchGetUseSet(t *testing.T, redis *Redis, testKeys []Key) {
+func testBatchGetUseSet(t *testing.T, cache Cacher, testKeys []Key) {
 	dest := make(map[string]struct{})
 
-	err := redis.BatchGet(context.Background(), testKeys, dest)
+	err := cache.BatchGet(context.Background(), testKeys, dest)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 10, len(dest))
@@ -92,23 +101,23 @@ func testBatchGetUseSet(t *testing.T, redis *Redis, testKeys []Key) {
 	}
 }
 
-func testBatchGetNil(t *testing.T, redis *Redis, testKeys []Key) {
+func testBatchGetNil(t *testing.T, cache Cacher, testKeys []Key) {
 	dest := []TestStruct{}
 
-	err := redis.BatchGet(context.Background(), testKeys, &dest)
+	err := cache.BatchGet(context.Background(), testKeys, &dest)
 
 	assert.Equal(t, nil, err)
 }
 
-func testSet(t *testing.T, redis *Redis, test Data) {
-	err := redis.Set(context.TODO(), test, time.Second)
+func testSet(t *testing.T, cache Cacher, test Data) {
+	err := cache.Set(context.TODO(), test, time.Second)
 
 	assert.Equal(t, nil, err)
 }
 
-func testGet(t *testing.T, redis *Redis, key Key) {
+func testGet(t *testing.T, cache Cacher, key Key) {
 	dest := TestStruct{}
-	err := redis.Get(context.Background(), key, &dest)
+	err := cache.Get(context.Background(), key, &dest)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, dest.Name, "test")

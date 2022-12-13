@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"time"
 
@@ -93,5 +94,59 @@ func (im *InMemory) BatchSet(_ context.Context, datas []Data, duration time.Dura
 }
 
 func (im *InMemory) BatchGet(ctx context.Context, keys []Key, dest any) error {
-	panic("IMPLEMENT ME!")
+	switch v := dest.(type) {
+	case map[string]struct{}:
+		// only need its key is it available or not
+		for _, key := range keys {
+			var (
+				err error
+			)
+			im.mu.Lock()
+			if val, ok := im.data[key]; ok {
+
+				if val.TTL.Before(time.Now()) {
+					err = im.Delete(ctx, key)
+					if err != nil {
+						return err
+					}
+					continue
+				}
+
+				v[string(key)] = struct{}{}
+
+			}
+			im.mu.Unlock()
+
+		}
+	default:
+		switch reflect.TypeOf(dest).Elem().Kind() {
+		case reflect.Slice, reflect.Array:
+			slicePtr := reflect.ValueOf(dest)
+			sliceValuePtr := slicePtr.Elem()
+			for _, key := range keys {
+				var (
+					err error
+				)
+				im.mu.Lock()
+				if val, ok := im.data[key]; ok {
+
+					if val.TTL.Before(time.Now()) {
+						err = im.Delete(ctx, key)
+						if err != nil {
+							return err
+						}
+						continue
+					}
+
+					sliceValuePtr.Set(reflect.Append(sliceValuePtr, reflect.ValueOf(val.Value)))
+
+				}
+				im.mu.Unlock()
+
+			}
+
+		}
+
+	}
+	return nil
 }
