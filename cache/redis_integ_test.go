@@ -36,12 +36,12 @@ func generateTestKeyAndVal() ([]Data, []Key) {
 }
 
 func TestCache(t *testing.T) {
-	redis, err := NewCache(WitHost("localhost:6379"), WitDatabase("0"), WitDriver(RedisDriver), WitPassword(""))
+	redis, err := NewCache(WithHost("localhost:6379"), WithDatabase("0"), WithDriver(RedisDriver), WithPassword(""))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	inmemory, err := NewCache(WitDriver(InMemoryDriver))
+	inmemory, err := NewCache(WithDriver(InMemoryDriver))
 	testCache_(t, redis)
 	testCache_(t, inmemory)
 }

@@ -21,7 +21,7 @@ import (
 
 func main() {
 	c, err := cache.NewCache(
-		cache.WitDriver(cache.InMemoryDriver),
+		cache.WithDriver(cache.InMemoryDriver),
 	)
 	if err != nil {
 		panic(err)

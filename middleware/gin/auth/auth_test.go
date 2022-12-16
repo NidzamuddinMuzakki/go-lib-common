@@ -1,6 +1,8 @@
 package auth_test
 
 import (
+	"bitbucket.org/moladinTech/go-lib-common/signature"
+	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
 	sentryMock "bitbucket.org/moladinTech/go-lib-common/sentry/mocks"
+	signatureMock "bitbucket.org/moladinTech/go-lib-common/signature/mocks"
 	"bitbucket.org/moladinTech/go-lib-common/validator"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -48,7 +51,7 @@ func TestNewAuth_ErrorOnValidation(t *testing.T) {
 	})
 }
 
-//////////// Func AuthToken
+// ////////// Func AuthToken
 func TestAuthToken_ErrorOnEmptyHeader(t *testing.T) {
 	t.Run("Error on empty header", func(t *testing.T) {
 		span := sentry.Span{}
@@ -220,7 +223,7 @@ func TestAuthToken_ErrorOnUserDetail(t *testing.T) {
 	})
 }
 
-//////////// Func AuthXApiKey
+// ////////// Func AuthXApiKey
 func TestAuthXApiKey_ErrorOnEmptyHeader(t *testing.T) {
 	t.Run("Error on empty header", func(t *testing.T) {
 		span := sentry.Span{}
@@ -289,5 +292,142 @@ func TestAuthXApiKey_ShouldSucceedOnMatchingApiKey(t *testing.T) {
 		responseData, _ := ioutil.ReadAll(w.Body)
 		require.Equal(t, mockResponse, string(responseData))
 		require.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+// Funtion AuthSignature
+func TestAuthSignature_ShouldSucceedOnMatchingSignature(t *testing.T) {
+	t.Run("Should succeed on matching signature", func(t *testing.T) {
+		span := sentry.Span{}
+		sentry := sentryMock.NewISentry(t)
+		sentry.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+
+		key := "service-sender:service-received:b3590f68-3d79-4ae5-8dfc-fd08b10c4e14:1670984752:secretbanget"
+		s, err := signature.NewSignature(
+			signature.WithAlgorithm(signature.BCrypt),
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		ctx := context.TODO()
+		hashed, err := s.Generate(ctx,
+			key)
+		if err != nil {
+			panic(err)
+		}
+
+		auth := auth.NewAuth(validator.New(),
+			auth.WithSentry(sentry),
+			auth.WithSignature(s),
+			auth.WithServiceName("service-received"),
+			auth.WithSecretKey("secretbanget"),
+		)
+		require.NotNil(t, auth)
+
+		mockResponse := ``
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", auth.AuthSignature())
+
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header = http.Header{}
+		req.Header.Set(constant.XRequestSignatureHeader, hashed)
+		req.Header.Set(constant.XServiceNameHeader, "service-sender")
+		req.Header.Set(constant.XRequestIdHeader, "b3590f68-3d79-4ae5-8dfc-fd08b10c4e14")
+		req.Header.Set(constant.XRequestAtHeader, "1670984752")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := ioutil.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+func TestAuthSignature_ErrorOnEmptyHeader(t *testing.T) {
+	t.Run("Error on empty header", func(t *testing.T) {
+		span := sentry.Span{}
+		sentry := sentryMock.NewISentry(t)
+		sentry.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+
+		s, err := signature.NewSignature(
+			signature.WithAlgorithm(signature.BCrypt),
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		auth := auth.NewAuth(validator.New(),
+			auth.WithSentry(sentry),
+			auth.WithSignature(s),
+			auth.WithServiceName("service-received"),
+			auth.WithSecretKey("secretbanget"),
+		)
+		require.NotNil(t, auth)
+
+		mockResponse := `{"status":"fail","message":"Unauthorized"}`
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", auth.AuthSignature())
+
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header = http.Header{}
+		req.Header.Set(constant.XServiceNameHeader, "service-sender")
+		req.Header.Set(constant.XRequestIdHeader, "b3590f68-3d79-4ae5-8dfc-fd08b10c4e14")
+		req.Header.Set(constant.XRequestAtHeader, "1670984752")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := ioutil.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}
+
+func TestAuthSignature_ErrorOnKeyAndSignatureNotMatch(t *testing.T) {
+	t.Run("Error on key and signature not match", func(t *testing.T) {
+		span := sentry.Span{}
+		sentry := sentryMock.NewISentry(t)
+		sentry.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+		sign := signatureMock.NewGenerateAndVerify(t)
+		sign.On("Verify", mock.Anything, mock.Anything, mock.Anything).
+			Return(false).
+			Once()
+
+		auth := auth.NewAuth(validator.New(),
+			auth.WithSentry(sentry),
+			auth.WithSignature(sign),
+			auth.WithServiceName("service-received"),
+			auth.WithSecretKey("secretbanget"),
+		)
+		require.NotNil(t, auth)
+
+		mockResponse := `{"status":"fail","message":"Unauthorized"}`
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", auth.AuthSignature())
+
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header = http.Header{}
+		req.Header.Set(constant.XRequestSignatureHeader, "dummy")
+		req.Header.Set(constant.XServiceNameHeader, "service-sender")
+		req.Header.Set(constant.XRequestIdHeader, "b3590f68-3d79-4ae5-8dfc-fd08b10c4e14")
+		req.Header.Set(constant.XRequestAtHeader, "1670984752")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := ioutil.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 }

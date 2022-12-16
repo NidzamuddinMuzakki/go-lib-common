@@ -1,33 +1,37 @@
 package auth
 
 import (
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"net/http"
-
 	"bitbucket.org/moladinTech/go-lib-activity-log/model"
 	moladinEvoClient "bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/response"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	"bitbucket.org/moladinTech/go-lib-common/signature"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/exp/slices"
+	"net/http"
 )
 
 type IMiddlewareAuth interface {
 	AuthToken() gin.HandlerFunc
 	AuthXApiKey() gin.HandlerFunc
 	Auth() gin.HandlerFunc
+	AuthSignature() gin.HandlerFunc
 }
 
 type MiddlewareAuthPackage struct {
 	Sentry           sentry.ISentry `validate:"required"`
 	MoladinEvoClient moladinEvoClient.IMoladinEvo
+	Signature        signature.GenerateAndVerify
 	ConfigApiKey     string
 	PermittedRoles   []string
+	ServiceName      string
+	SecretKet        string
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -35,19 +39,40 @@ func WithSentry(sentry sentry.ISentry) Option {
 		s.Sentry = sentry
 	}
 }
+
 func WithMoladinEvoClient(moladinEvoClient moladinEvoClient.IMoladinEvo) Option {
 	return func(s *MiddlewareAuthPackage) {
 		s.MoladinEvoClient = moladinEvoClient
 	}
 }
+
+func WithSignature(signature signature.GenerateAndVerify) Option {
+	return func(s *MiddlewareAuthPackage) {
+		s.Signature = signature
+	}
+}
+
 func WithConfigApiKey(configApiKey string) Option {
 	return func(s *MiddlewareAuthPackage) {
 		s.ConfigApiKey = configApiKey
 	}
 }
+
 func WithPermittedRoles(permittedRoles []string) Option {
 	return func(s *MiddlewareAuthPackage) {
 		s.PermittedRoles = permittedRoles
+	}
+}
+
+func WithServiceName(serviceName string) Option {
+	return func(s *MiddlewareAuthPackage) {
+		s.ServiceName = serviceName
+	}
+}
+
+func WithSecretKey(secretKey string) Option {
+	return func(s *MiddlewareAuthPackage) {
+		s.SecretKet = secretKey
 	}
 }
 
@@ -175,5 +200,36 @@ func (a *MiddlewareAuthPackage) Auth() gin.HandlerFunc {
 			Status:  response.StatusFail,
 		})
 		c.Abort()
+	}
+}
+
+func (a *MiddlewareAuthPackage) AuthSignature() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		const logCtx = "common.middleware.gin.auth.AuthSignature"
+		reqCtx := c.Request.Context()
+		span := a.Sentry.StartSpan(reqCtx, logCtx)
+		defer span.Finish()
+
+		var (
+			serviceNameSender = c.GetHeader(constant.XServiceNameHeader)
+			requestSignature  = c.GetHeader(constant.XRequestSignatureHeader)
+			requestID         = c.GetHeader(constant.XRequestIdHeader)
+			requestAt         = c.GetHeader(constant.XRequestAtHeader)
+		)
+
+		if serviceNameSender == "" || requestSignature == "" || requestID == "" || requestAt == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			return
+		}
+
+		key := serviceNameSender + ":" + a.ServiceName + ":" + requestID + ":" + requestAt + ":" + a.SecretKet
+		match := a.Signature.Verify(c.Request.Context(), key, requestSignature)
+		if !match {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			return
+		}
+
+		c.Next()
+		return
 	}
 }

@@ -6,6 +6,7 @@ What's got in this package.
 1. AuthToken - used for authentication with moladin evo account
 2. AuthXApiKey - used for authentication with your app key
 3. Auth - used for authentication with moladin evo or authentication api key with new generate
+4. AuthSignature - used for authentication with [request signature](https://moladin.atlassian.net/wiki/spaces/PTS/pages/535068726/X-Request-Signature)
 
 ```go
 // api key with new generate
@@ -52,5 +53,12 @@ gin.Default().Use(
 ```go
 gin.Default().Use(
   auth.Auth(),
+)
+```
+
+### Using AuthSignature
+```go
+gin.Default().Use(
+  auth.AuthSignature(),
 )
 ```

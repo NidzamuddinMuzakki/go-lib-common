@@ -40,25 +40,25 @@ type Cache struct {
 
 type Option func(*Cache)
 
-func WitDriver(driver Driver) Option {
+func WithDriver(driver Driver) Option {
 	return func(c *Cache) {
 		c.driver = &driver
 	}
 }
 
-func WitHost(host string) Option {
+func WithHost(host string) Option {
 	return func(c *Cache) {
 		c.host = host
 	}
 }
 
-func WitPassword(password string) Option {
+func WithPassword(password string) Option {
 	return func(c *Cache) {
 		c.password = password
 	}
 }
 
-func WitDatabase(db string) Option {
+func WithDatabase(db string) Option {
 	return func(c *Cache) {
 		c.database = db
 	}

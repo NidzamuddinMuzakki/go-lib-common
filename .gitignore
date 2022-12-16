@@ -21,7 +21,6 @@ dist/
 
 # Maven
 target/
-dist/
 
 # Unit test reports
 TEST*.xml
@@ -52,4 +51,5 @@ Thumbs.db
 # Go
 vendor
 
-
+# Test files
+*.out
