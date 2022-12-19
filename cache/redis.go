@@ -145,3 +145,13 @@ func (r *Redis) BatchGet(ctx context.Context, keys []Key, dest any) error {
 	return nil
 
 }
+
+func (r *Redis) Incr(ctx context.Context, key string) (*redis.IntCmd, error) {
+	val := r.client.Incr(ctx, key)
+	return val, val.Err()
+}
+
+func (r *Redis) Expire(ctx context.Context, key string, ttl time.Duration) (*redis.BoolCmd, error) {
+	val := r.client.Expire(ctx, key, ttl)
+	return val, val.Err()
+}

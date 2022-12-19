@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 )
@@ -149,4 +150,12 @@ func (im *InMemory) BatchGet(ctx context.Context, keys []Key, dest any) error {
 
 	}
 	return nil
+}
+
+func (im *InMemory) Incr(ctx context.Context, key string) (*redis.IntCmd, error) {
+	return nil, nil
+}
+
+func (im *InMemory) Expire(ctx context.Context, key string, ttl time.Duration) (*redis.BoolCmd, error) {
+	return nil, nil
 }

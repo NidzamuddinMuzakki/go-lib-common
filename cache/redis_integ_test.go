@@ -65,6 +65,10 @@ func testCache_(t *testing.T, cache Cacher) {
 
 	testSet(t, cache, testData)
 	testGet(t, cache, testData.Key)
+
+	testData = Data{Key: "testKeyIncr"}
+	testIncr(t, cache, string(testData.Key))
+	testExpire(t, cache, string(testData.Key), time.Second*60)
 }
 
 func testBatchSet(t *testing.T, cache Cacher, testStructs []Data) {
@@ -122,4 +126,14 @@ func testGet(t *testing.T, cache Cacher, key Key) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, dest.Name, "test")
 
+}
+
+func testIncr(t *testing.T, cache Cacher, key string) {
+	_, err := cache.Incr(context.Background(), key)
+	assert.Equal(t, nil, err)
+}
+
+func testExpire(t *testing.T, cache Cacher, key string, duration time.Duration) {
+	_, err := cache.Expire(context.Background(), key, duration)
+	assert.Equal(t, nil, err)
 }

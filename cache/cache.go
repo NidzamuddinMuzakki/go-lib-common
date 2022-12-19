@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
 
@@ -21,6 +22,8 @@ type Cacher interface {
 	Delete(ctx context.Context, key Key) error
 	BatchSet(ctx context.Context, datas []Data, duration time.Duration) error
 	BatchGet(ctx context.Context, keys []Key, dest any) error
+	Incr(ctx context.Context, key string) (*redis.IntCmd, error)
+	Expire(ctx context.Context, key string, ttl time.Duration) (*redis.BoolCmd, error)
 }
 
 type Driver string
