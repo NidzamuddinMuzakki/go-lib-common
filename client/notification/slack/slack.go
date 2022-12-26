@@ -19,6 +19,7 @@ import (
 type ISlack interface {
 	Send(ctx context.Context, message string) error
 	Health(ctx context.Context) error
+	GetFormattedMessage(serviceName, serviceEnv, logCtx string, message any) string
 }
 
 type SlackPackage struct {
@@ -148,4 +149,9 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 	}
 
 	return nil
+}
+
+func (c *SlackPackage) GetFormattedMessage(serviceName, serviceEnv, logCtx string, message any) string {
+	const SLACK_MESSAGE = ":rotating-light-red: You got error from:\n>*Service:* %s\n>*Env:* %s\n>*Module:* %s\n>*Message:* %+v"
+	return fmt.Sprintf(SLACK_MESSAGE, serviceName, serviceEnv, logCtx, message)
 }
