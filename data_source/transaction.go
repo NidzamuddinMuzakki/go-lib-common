@@ -34,7 +34,11 @@ func (t *Transaction) WithTx(ctx context.Context, txFunc TxFunc, opts *sql.TxOpt
 
 	err = txFunc(tx)
 	if err != nil {
-		return RollbackTx(tx)
+		errRb := RollbackTx(tx)
+		if errRb != nil {
+			return errRb
+		}
+		return err
 	}
 
 	return CommitTx(tx)
