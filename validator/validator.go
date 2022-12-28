@@ -36,6 +36,8 @@ func ToErrResponse(err error) string {
 				errors = append(errors, fmt.Sprintf("%s must be an oneof [%s]", err.Field(), err.Param()))
 			case "required_without":
 				errors = append(errors, fmt.Sprintf("%s is a required if %s is empty", err.Field(), err.Param()))
+			case "required_without_all":
+				errors = append(errors, fmt.Sprintf("%s is a required if %s are empty", err.Field(), err.Param()))
 			case "required_with":
 				errors = append(errors, fmt.Sprintf("%s is a required if %s is not empty", err.Field(), err.Param()))
 			case "excluded_with":

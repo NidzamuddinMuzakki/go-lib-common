@@ -31,7 +31,7 @@ type MiddlewareAuthPackage struct {
 	ConfigApiKey     string
 	PermittedRoles   []string
 	ServiceName      string
-	SecretKet        string
+	SecretKey        string
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -72,7 +72,7 @@ func WithServiceName(serviceName string) Option {
 
 func WithSecretKey(secretKey string) Option {
 	return func(s *MiddlewareAuthPackage) {
-		s.SecretKet = secretKey
+		s.SecretKey = secretKey
 	}
 }
 
@@ -222,7 +222,7 @@ func (a *MiddlewareAuthPackage) AuthSignature() gin.HandlerFunc {
 			return
 		}
 
-		key := serviceNameSender + ":" + a.ServiceName + ":" + requestID + ":" + requestAt + ":" + a.SecretKet
+		key := serviceNameSender + ":" + a.ServiceName + ":" + requestID + ":" + requestAt + ":" + a.SecretKey
 		match := a.Signature.Verify(c.Request.Context(), key, requestSignature)
 		if !match {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
