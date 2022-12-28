@@ -2,10 +2,11 @@ package data_source
 
 import (
 	"context"
+	"github.com/jmoiron/sqlx"
 )
 
 // Exec wrapping multiple queries or single query without transaction.
-func Exec(ctx context.Context, db DBExecutor, statements ...*Statement) error {
+func Exec(ctx context.Context, db *sqlx.DB, statements ...*Statement) error {
 	err := run(ctx, db, statements...)
 	if err != nil {
 		return err
@@ -15,7 +16,7 @@ func Exec(ctx context.Context, db DBExecutor, statements ...*Statement) error {
 }
 
 // ExecTx wrapping multiple queries or single query in a transaction.
-func ExecTx(ctx context.Context, db DBExecutor, statements ...*Statement) error {
+func ExecTx(ctx context.Context, db *sqlx.DB, statements ...*Statement) error {
 	tx, err := db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err

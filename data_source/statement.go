@@ -120,7 +120,7 @@ func (s *Statement) exec(ctx context.Context, stmt *sqlx.Stmt) error {
 
 // run Execute the statement without transaction within supplied
 // query and update destination if not nil.
-func (s *Statement) run(ctx context.Context, db QueryExecutor) error {
+func (s *Statement) run(ctx context.Context, db *sqlx.DB) error {
 	stmt, err := db.PreparexContext(ctx, s.GetQuery())
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (s *Statement) run(ctx context.Context, db QueryExecutor) error {
 
 // run Execute the statement with transaction within supplied
 // query and update destination if not nil.
-func (s *Statement) runTx(ctx context.Context, tx QueryExecutor) error {
+func (s *Statement) runTx(ctx context.Context, tx *sqlx.Tx) error {
 	stmt, err := tx.PreparexContext(ctx, s.GetQuery())
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func (s *Statement) sync() {
 }
 
 // run multiple statements without transaction.
-func run(ctx context.Context, db QueryExecutor, statements ...*Statement) error {
+func run(ctx context.Context, db *sqlx.DB, statements ...*Statement) error {
 	for i, statement := range statements {
 		err := statement.run(ctx, db)
 		if err != nil {
@@ -161,7 +161,7 @@ func run(ctx context.Context, db QueryExecutor, statements ...*Statement) error 
 }
 
 // runTx run multiple statements in single transactions.
-func runTx(ctx context.Context, tx QueryExecutor, statements ...*Statement) error {
+func runTx(ctx context.Context, tx *sqlx.Tx, statements ...*Statement) error {
 	for i, statement := range statements {
 		err := statement.runTx(ctx, tx)
 		if err != nil {
