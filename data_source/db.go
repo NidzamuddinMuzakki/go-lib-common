@@ -1,6 +1,8 @@
 package data_source
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"reflect"
 	"time"
@@ -17,6 +19,14 @@ const (
 )
 
 var SquirrelPgsql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+// DBExecutor interface for database executor.
+type DBExecutor interface {
+	BeginTxx(ctx context.Context, opts *sql.TxOptions) (*sqlx.Tx, error)
+	PreparexContext(ctx context.Context, query string) (*sqlx.Stmt, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+}
 
 type Config struct {
 	Driver   string `json:"driver" yaml:"driver"`
