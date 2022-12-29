@@ -18,6 +18,7 @@ require (
 require (
 	bitbucket.org/moladinTech/go-lib-activity-log v1.0.3
 	github.com/Masterminds/squirrel v1.5.3
+	github.com/andreburgaud/crypt2go v1.1.0
 	github.com/aws/aws-sdk-go v1.17.7
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-migrate/migrate/v4 v4.15.2

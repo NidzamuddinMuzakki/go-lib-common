@@ -5,6 +5,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/client/aws"
 	"bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
+	"bitbucket.org/moladinTech/go-lib-common/encryption"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/panic_recovery"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/tracer"
@@ -24,6 +25,7 @@ type IRegistry interface {
 	GetTime() time.TimeItf
 	GetValidator() *validator.Validate
 	GetCache() cache.Cacher
+	GetEncryption() encryption.IEncryption
 }
 
 type registry struct {
@@ -37,6 +39,7 @@ type registry struct {
 	time                    time.TimeItf
 	validator               *validator.Validate
 	cache                   cache.Cacher
+	encryption              encryption.IEncryption
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -99,6 +102,12 @@ func WithCache(cache cache.Cacher) Option {
 	}
 }
 
+func WithEncryption(encryption encryption.IEncryption) Option {
+	return func(s *registry) {
+		s.encryption = encryption
+	}
+}
+
 type Option func(r *registry)
 
 func NewRegistry(
@@ -151,4 +160,8 @@ func (r *registry) GetValidator() *validator.Validate {
 
 func (r *registry) GetCache() cache.Cacher {
 	return r.cache
+}
+
+func (r *registry) GetEncryption() encryption.IEncryption {
+	return r.encryption
 }
