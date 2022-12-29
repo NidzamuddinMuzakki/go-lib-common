@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
@@ -19,7 +20,7 @@ import (
 type ISlack interface {
 	Send(ctx context.Context, message string) error
 	Health(ctx context.Context) error
-	GetFormattedMessage(serviceName, serviceEnv, logCtx string, message any) string
+	GetFormattedMessage(serviceName, serviceEnv, logCtx string, ctx context.Context, message any) string
 }
 
 type SlackPackage struct {
@@ -68,16 +69,18 @@ type Config struct {
 }
 
 type LogCtx struct {
-	ClientNotificationSlackSend string
-	ClientNotificationSlackPing string
+	ClientNotificationSlackSend                string
+	ClientNotificationSlackPing                string
+	ClientNotificationSlackGetFormattedMessage string
 }
 
 var (
 	ErrSendNotification = errors.New("failed to send slack notification")
 	ErrHealthCheck      = errors.New("failed health check notification")
 	LogCtxName          = LogCtx{
-		ClientNotificationSlackSend: "client.notification.slack.Send",
-		ClientNotificationSlackPing: "client.notification.slack.Ping",
+		ClientNotificationSlackSend:                "client.notification.slack.Send",
+		ClientNotificationSlackPing:                "client.notification.slack.Ping",
+		ClientNotificationSlackGetFormattedMessage: "client.notification.slack.GetFormattedMessage",
 	}
 )
 
@@ -151,7 +154,16 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 	return nil
 }
 
-func (c *SlackPackage) GetFormattedMessage(serviceName, serviceEnv, logCtx string, message any) string {
-	const SLACK_MESSAGE = ":rotating-light-red: You got error from:\n>*Service:* %s\n>*Env:* %s\n>*Module:* %s\n>*Message:* %+v"
-	return fmt.Sprintf(SLACK_MESSAGE, serviceName, serviceEnv, logCtx, message)
+func (c *SlackPackage) GetFormattedMessage(serviceName, serviceEnv, logCtx string, ctx context.Context, message any) string {
+	var (
+		span = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackGetFormattedMessage)
+	)
+
+	defer c.Sentry.Finish(span)
+	requestID, ok := ctx.Value(constant.XRequestIdHeader).(string)
+	if !ok {
+		requestID = logger.RequestIDKey
+	}
+	const SLACK_MESSAGE = ":rotating-light-red: You got error from:\n>*Service:* %s\n>*Env:* %s\n>*Module:* %s\n>*RequestID:* %s\n>*Message:* %+v"
+	return fmt.Sprintf(SLACK_MESSAGE, serviceName, serviceEnv, logCtx, requestID, message)
 }
