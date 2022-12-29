@@ -20,7 +20,7 @@ import (
 type ISlack interface {
 	Send(ctx context.Context, message string) error
 	Health(ctx context.Context) error
-	GetFormattedMessage(serviceName, serviceEnv, logCtx string, ctx context.Context, message any) string
+	GetFormattedMessage(logCtx string, ctx context.Context, message any) string
 }
 
 type SlackPackage struct {
@@ -28,6 +28,8 @@ type SlackPackage struct {
 	SlackConfigNotificationSlackTimeoutInSeconds int            `validate:"required"`
 	SlackConfigURL                               string         `validate:"required"`
 	SlackConfigChannel                           string         `validate:"required"`
+	ServiceName                                  string
+	ServiceEnv                                   string
 	client                                       *gorequest.SuperAgent
 }
 
@@ -49,6 +51,16 @@ func WithSlackConfigURL(slackConfigURL string) Option {
 func WithSlackConfigChannel(slackConfigChannel string) Option {
 	return func(s *SlackPackage) {
 		s.SlackConfigChannel = slackConfigChannel
+	}
+}
+func WithServiceName(serviceName string) Option {
+	return func(sp *SlackPackage) {
+		sp.ServiceName = serviceName
+	}
+}
+func WithServiceEnv(serviceEnv string) Option {
+	return func(sp *SlackPackage) {
+		sp.ServiceEnv = serviceEnv
 	}
 }
 
@@ -154,7 +166,7 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 	return nil
 }
 
-func (c *SlackPackage) GetFormattedMessage(serviceName, serviceEnv, logCtx string, ctx context.Context, message any) string {
+func (c *SlackPackage) GetFormattedMessage(logCtx string, ctx context.Context, message any) string {
 	var (
 		span = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackGetFormattedMessage)
 	)
@@ -165,5 +177,5 @@ func (c *SlackPackage) GetFormattedMessage(serviceName, serviceEnv, logCtx strin
 		requestID = logger.RequestIDKey
 	}
 	const SLACK_MESSAGE = ":rotating-light-red: You got error from:\n>*Service:* %s\n>*Env:* %s\n>*Module:* %s\n>*RequestID:* %s\n>*Message:* %+v"
-	return fmt.Sprintf(SLACK_MESSAGE, serviceName, serviceEnv, logCtx, requestID, message)
+	return fmt.Sprintf(SLACK_MESSAGE, c.ServiceName, c.ServiceEnv, logCtx, requestID, message)
 }
