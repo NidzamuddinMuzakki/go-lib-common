@@ -28,6 +28,10 @@ func ToErrResponse(err error) string {
 			switch err.Tag() {
 			case "required":
 				errors = append(errors, fmt.Sprintf("%s is a required field", err.Field()))
+			case "len":
+				errors = append(errors, fmt.Sprintf("%s must be a %s length", err.Field(), err.Param()))
+			case "min":
+				errors = append(errors, fmt.Sprintf("%s must be a minimum of %s in length", err.Field(), err.Param()))
 			case "max":
 				errors = append(errors, fmt.Sprintf("%s must be a maximum of %s in length", err.Field(), err.Param()))
 			case "url":
