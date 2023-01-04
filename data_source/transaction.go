@@ -7,26 +7,26 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Transaction struct {
+type TransactionRunner struct {
 	DB *sqlx.DB
 }
 
 type TxFunc func(tx *sqlx.Tx) error
-type TxOpt func(t *Transaction)
+type TxOpt func(t *TransactionRunner)
 
 func SetDB(db *sqlx.DB) TxOpt {
-	return func(t *Transaction) {
+	return func(t *TransactionRunner) {
 		t.DB = db
 	}
 }
 
-func NewTransaction(db *sqlx.DB) *Transaction {
-	return &Transaction{
+func NewTransactionRunner(db *sqlx.DB) *TransactionRunner {
+	return &TransactionRunner{
 		DB: db,
 	}
 }
 
-func (t *Transaction) WithTx(ctx context.Context, txFunc TxFunc, opts *sql.TxOptions) error {
+func (t *TransactionRunner) WithTx(ctx context.Context, txFunc TxFunc, opts *sql.TxOptions) error {
 	tx, err := StartTx(ctx, t.DB, opts)
 	if err != nil {
 		return err
