@@ -1,3 +1,4 @@
+//go:generate mockery --name=Exporter
 package exporter
 
 import (
