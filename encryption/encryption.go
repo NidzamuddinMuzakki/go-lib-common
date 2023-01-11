@@ -54,21 +54,31 @@ func NewEncryption(
 	return encryptionPackage
 }
 
-func (p *EncryptionPackage) Encrypt(data string) []byte {
+// GenerateSalt Convert the key to a md5 hash
+func (p *EncryptionPackage) GenerateSalt(key string) []byte {
 	h := md5.New()
-	h.Write([]byte(fmt.Sprintf("%s:%s", p.AppName, p.AppName)))
-	key := h.Sum(nil)
+	h.Write([]byte(fmt.Sprintf("%s:%s", p.AppName, key)))
+	return h.Sum(nil)
+}
+
+// Encrypt the data using the salt
+func (p *EncryptionPackage) Encrypt(data string, salt []byte) []byte {
+	// Create a new blowfish cipher
 	bytes := []byte(data)
-	block, err := blowfish.NewCipher(key)
+	block, err := blowfish.NewCipher(salt)
 	if err != nil {
 		panic(err.Error())
 	}
+
+	// Pad the data
 	mode := ecb.NewECBEncrypter(block)
 	padder := padding.NewPkcs5Padding()
 	bytes, err = padder.Pad(bytes)
 	if err != nil {
 		panic(err.Error())
 	}
+
+	// Encrypt the data
 	ct := make([]byte, len(bytes))
 	mode.CryptBlocks(ct, bytes)
 	return ct
