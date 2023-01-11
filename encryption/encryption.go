@@ -15,7 +15,8 @@ import (
 )
 
 type IEncryption interface {
-	Encrypt(data string) []byte
+	GenerateSalt(key string) []byte
+	Encrypt(data string, salt []byte) []byte
 }
 
 type EncryptionPackage struct {
