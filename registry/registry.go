@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
 	"bitbucket.org/moladinTech/go-lib-common/encryption"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
+	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/limiter"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/panic_recovery"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/tracer"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
@@ -22,6 +23,7 @@ type IRegistry interface {
 	GetAuthMiddleware() auth.IMiddlewareAuth
 	GetPanicRecoveryMiddleware() panic_recovery.IMiddlewarePanicRecovery
 	GetTraceMiddleware() tracer.IMiddlewareTracer
+	GetLimiterMiddleware() limiter.IMiddlewareLimiter
 	GetTime() time.TimeItf
 	GetValidator() *validator.Validate
 	GetCache() cache.Cacher
@@ -36,6 +38,7 @@ type registry struct {
 	authMiddleware          auth.IMiddlewareAuth
 	panicRecoveryMiddleware panic_recovery.IMiddlewarePanicRecovery
 	tracerMiddleware        tracer.IMiddlewareTracer
+	limiterMiddleware       limiter.IMiddlewareLimiter
 	time                    time.TimeItf
 	validator               *validator.Validate
 	cache                   cache.Cacher
@@ -81,6 +84,12 @@ func WithPanicRecoveryMiddleware(panicRecoveryMiddleware panic_recovery.IMiddlew
 func WithTracerMiddleware(tracerMiddleware tracer.IMiddlewareTracer) Option {
 	return func(s *registry) {
 		s.tracerMiddleware = tracerMiddleware
+	}
+}
+
+func WithLimiterMiddleware(limiterMiddleware limiter.IMiddlewareLimiter) Option {
+	return func(s *registry) {
+		s.limiterMiddleware = limiterMiddleware
 	}
 }
 
@@ -148,6 +157,10 @@ func (r *registry) GetPanicRecoveryMiddleware() panic_recovery.IMiddlewarePanicR
 
 func (r *registry) GetTraceMiddleware() tracer.IMiddlewareTracer {
 	return r.tracerMiddleware
+}
+
+func (r *registry) GetLimiterMiddleware() limiter.IMiddlewareLimiter {
+	return r.limiterMiddleware
 }
 
 func (r *registry) GetTime() time.TimeItf {
