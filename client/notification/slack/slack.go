@@ -176,6 +176,6 @@ func (c *SlackPackage) GetFormattedMessage(logCtx string, ctx context.Context, m
 	if !ok {
 		requestID = logger.RequestIDKey
 	}
-	const SLACK_MESSAGE = ":rotating-light-red: You got error from:\n>*Service:* %s\n>*Env:* %s\n>*Module:* %s\n>*RequestID:* %s\n>*Message:* %+v"
-	return fmt.Sprintf(SLACK_MESSAGE, c.ServiceName, c.ServiceEnv, logCtx, requestID, message)
+	const slackMessage = ":rotating-light-red: You got error from:\n>*Service:* %s\n>*Env:* %s\n>*Module:* %s\n>*RequestID:* %s\n>*Message:* %+v"
+	return fmt.Sprintf(slackMessage, c.ServiceName, c.ServiceEnv, logCtx, requestID, message)
 }
