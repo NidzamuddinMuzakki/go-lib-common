@@ -25,12 +25,12 @@ func HttpErrResp(ctx context.Context, err error, c *gin.Context, args ...interfa
 
 // HttpErrRespAndSendNotif is helper to logger the error and send response and send notification (if statusCode >= 500)
 func HttpErrRespAndSendNotif(ctx context.Context, err error, c *gin.Context, commonRegistry registry.IRegistry) {
-	logger.Error(ctx, `error`, err)
+	logCtx := getLogCtx(err)
+	logger.Error(ctx, `error`, err, logger.Tag{Key: "logCtx", Value: logCtx})
 	if val, ok := MapErrorResponse[GetErrKey(err)]; ok {
 		if val.StatusCode >= 500 {
 			commonRegistry.GetSentry().CaptureException(err)
 			// send notif
-			logCtx := getLogCtx(err)
 			slackMessage := commonRegistry.GetSlack().GetFormattedMessage(logCtx, ctx, err)
 			errSlack := commonRegistry.GetSlack().Send(ctx, slackMessage)
 			if errSlack != nil {
@@ -43,7 +43,6 @@ func HttpErrRespAndSendNotif(ctx context.Context, err error, c *gin.Context, com
 	} else { // default return message when error happen
 		commonRegistry.GetSentry().CaptureException(err)
 		// send notif
-		logCtx := getLogCtx(err)
 		slackMessage := commonRegistry.GetSlack().GetFormattedMessage(logCtx, ctx, err)
 		errSlack := commonRegistry.GetSlack().Send(ctx, slackMessage)
 		if errSlack != nil {
