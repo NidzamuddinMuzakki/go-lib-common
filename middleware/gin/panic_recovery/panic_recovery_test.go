@@ -34,6 +34,18 @@ func TestNewPanicRecovery_ShouldSucceedWithValidation(t *testing.T) {
 	})
 }
 
+func TestNewPanicRecovery_ShouldSucceedWithoutSlack(t *testing.T) {
+	t.Run("Should Succeed New Panic Recovery Without Slack", func(t *testing.T) {
+		dummy := "dummy"
+		sentryClient := sentryMock.NewISentry(t)
+		panicRecovery := panic_recovery.NewPanicRecovery(validator.New(),
+			panic_recovery.WithConfigEnv(dummy),
+			panic_recovery.WithSentry(sentryClient),
+		)
+		require.NotNil(t, panicRecovery)
+	})
+}
+
 func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentProduction(t *testing.T) {
 	t.Run("Should succeeed with environment production", func(t *testing.T) {
 		panicText := "panic on middleware"
@@ -66,6 +78,49 @@ func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentProduction(t *testi
 			panic_recovery.WithConfigEnv(constant.EnvProduction),
 			panic_recovery.WithSentry(sentryClient),
 			panic_recovery.WithSlack(slack),
+		)
+		require.NotNil(t, panicRecovery)
+
+		mockResponse := `{"status":"fail","message":"Server error. Contact admin for more information."}`
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", panicRecovery.PanicRecoveryMiddleware(), func(ctx *gin.Context) {
+			panic(panicText)
+		})
+		req, _ := http.NewRequest("GET", "/", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := io.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentProductionWithoutSlack(t *testing.T) {
+	t.Run("Should succeeed with environment production without slack", func(t *testing.T) {
+		panicText := "panic on middleware"
+		dummyEventID := sentry.NewEvent().EventID
+		span := sentry.Span{}
+		sentryClient := sentryMock.NewISentry(t)
+		sentryClient.On("HandlingPanic", panicText).
+			Once()
+		sentryClient.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+		sentryClient.On("SpanContext", mock.Anything).
+			Return(context.Background()).
+			Once()
+		sentryClient.On("Finish", mock.Anything).
+			Once()
+		sentryClient.On("CaptureException", errors.New(fmt.Sprintf("panic: %v", panicText))).
+			Return(&dummyEventID).
+			Once()
+
+		panicRecovery := panic_recovery.NewPanicRecovery(validator.New(),
+			panic_recovery.WithConfigEnv(constant.EnvProduction),
+			panic_recovery.WithSentry(sentryClient),
 		)
 		require.NotNil(t, panicRecovery)
 
@@ -138,6 +193,49 @@ func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentStaging(t *testing.
 	})
 }
 
+func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentStagingWithoutSlack(t *testing.T) {
+	t.Run("Should succeeed with environment staging wihtout slack", func(t *testing.T) {
+		panicText := "panic on middleware"
+		dummyEventID := sentry.NewEvent().EventID
+		span := sentry.Span{}
+		sentryClient := sentryMock.NewISentry(t)
+		sentryClient.On("HandlingPanic", panicText).
+			Once()
+		sentryClient.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+		sentryClient.On("SpanContext", mock.Anything).
+			Return(context.Background()).
+			Once()
+		sentryClient.On("Finish", mock.Anything).
+			Once()
+		sentryClient.On("CaptureException", errors.New(fmt.Sprintf("panic: %v", panicText))).
+			Return(&dummyEventID).
+			Once()
+
+		panicRecovery := panic_recovery.NewPanicRecovery(validator.New(),
+			panic_recovery.WithConfigEnv(constant.EnvStaging),
+			panic_recovery.WithSentry(sentryClient),
+		)
+		require.NotNil(t, panicRecovery)
+
+		mockResponse := `{"status":"fail","message":"panic: ` + panicText + `"}`
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", panicRecovery.PanicRecoveryMiddleware(), func(ctx *gin.Context) {
+			panic(panicText)
+		})
+		req, _ := http.NewRequest("GET", "/", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := io.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
 func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentDevelopment(t *testing.T) {
 	t.Run("Should succeeed with environment development", func(t *testing.T) {
 		panicText := "panic on middleware"
@@ -170,6 +268,49 @@ func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentDevelopment(t *test
 			panic_recovery.WithConfigEnv(constant.EnvDevelopment),
 			panic_recovery.WithSentry(sentryClient),
 			panic_recovery.WithSlack(slack),
+		)
+		require.NotNil(t, panicRecovery)
+
+		mockResponse := `{"status":"fail","message":"panic: ` + panicText + `"}`
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", panicRecovery.PanicRecoveryMiddleware(), func(ctx *gin.Context) {
+			panic(panicText)
+		})
+		req, _ := http.NewRequest("GET", "/", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := io.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestPanicRecoveryMiddleware_ShouldSucceedWithEnvironmentDevelopmentWithoutSlack(t *testing.T) {
+	t.Run("Should succeeed with environment development without slack", func(t *testing.T) {
+		panicText := "panic on middleware"
+		dummyEventID := sentry.NewEvent().EventID
+		span := sentry.Span{}
+		sentryClient := sentryMock.NewISentry(t)
+		sentryClient.On("HandlingPanic", panicText).
+			Once()
+		sentryClient.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+		sentryClient.On("SpanContext", mock.Anything).
+			Return(context.Background()).
+			Once()
+		sentryClient.On("Finish", mock.Anything).
+			Once()
+		sentryClient.On("CaptureException", errors.New(fmt.Sprintf("panic: %v", panicText))).
+			Return(&dummyEventID).
+			Once()
+
+		panicRecovery := panic_recovery.NewPanicRecovery(validator.New(),
+			panic_recovery.WithConfigEnv(constant.EnvDevelopment),
+			panic_recovery.WithSentry(sentryClient),
 		)
 		require.NotNil(t, panicRecovery)
 

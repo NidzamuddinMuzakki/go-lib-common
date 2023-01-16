@@ -168,7 +168,43 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
     logger.Error(ctx, errWrapped.Error()) // error query builder -- At /Users/Moladin/go/go-lib-common/common/readme.md: 168: root cause: error table x is not found
 
 ```
-    
+
+### Using HttpErrRespAndSendNotif
+
+```go
+    // userrepo.go
+    var (
+        logCtx = "reposiotry.GetUser"
+        ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
+    )
+
+    sql, args, err := squirrel.ToSql()
+    if err != nil {
+        // will wrap error from squirrel.ToSql() with ErrSQLQueryBuilder 
+        wrapErr := liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
+        // will set logCtx to wrapErr
+        return nil, 0, liberrors.SetLogCtx(wrapErr, logCtx)
+    }
+
+```
+
+```go
+// userhttp.go
+
+type userHttp struct {
+    commonRegistry  common.IRegistry
+    userService     service.IUserService
+}
+
+func (h *userHttp) Delete(c *gin.Context) {
+    err := h.userService.GetUser()
+    if err != nil {
+        liberrors.HttpErrRespAndSendNotif(ctx, err, c, h.commonRegistry)
+        return
+    }
+}
+
+```
 
 
 

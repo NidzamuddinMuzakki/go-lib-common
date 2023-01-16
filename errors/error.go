@@ -12,6 +12,7 @@ type err struct {
 	stacktrace string
 	keyerr     error
 	stack      []uintptr
+	logCtx     string
 }
 
 func Wrap(err_ error) error {
@@ -96,11 +97,29 @@ func WrapWithErr(original error, wrapped error) error {
 	}
 }
 
-//get error as key to compare what the output response will be
+// get error as key to compare what the output response will be
 func GetErrKey(err_ error) error {
 	if val, ok := err_.(*err); ok {
 		return val.keyerr
 	}
 
 	return err_
+}
+
+// SetLogCtx will set the logCtx of the error
+func SetLogCtx(err_ error, logCtx string) error {
+	if val, ok := err_.(*err); ok {
+		val.logCtx = logCtx
+	}
+
+	return err_
+}
+
+// getLogCtx will return the logCtx of the error
+func getLogCtx(err_ error) string {
+	if val, ok := err_.(*err); ok {
+		return val.logCtx
+	}
+
+	return ""
 }

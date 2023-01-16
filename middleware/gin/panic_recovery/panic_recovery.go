@@ -25,7 +25,7 @@ type IMiddlewarePanicRecovery interface {
 type MiddlewarePanicRecoveryPackage struct {
 	ConfigEnv string         `validate:"required"`
 	Sentry    sentry.ISentry `validate:"required"`
-	Slack     slack.ISlack   `validate:"required"`
+	Slack     slack.ISlack
 }
 
 func WithConfigEnv(configEnv string) Option {
@@ -110,7 +110,9 @@ func (p *MiddlewarePanicRecoveryPackage) PanicRecoveryMiddleware() gin.HandlerFu
 					responseMsg = errStr
 				}
 				p.Sentry.HandlingPanic(pnc)
-				p.sendSlack(ctx, errors.New(errStr))
+				if p.Slack != nil {
+					p.sendSlack(ctx, errors.New(errStr))
+				}
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,
 					response.Response{

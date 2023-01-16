@@ -136,6 +136,24 @@ func (t *TestErrorSuite) TestGetStackTrace() {
 		"bitbucket.org/moladinTech/go-lib-common/errors.(*TestErrorSuite).TestGetStackTrace"}, funcName)
 }
 
+func (t *TestErrorSuite) TestSetAndGetLogCtx() {
+	logCtx := "errors.TestSetLogCtx"
+	testErr1 := errors.New("test err 1")
+	testErr2 := errors.New("test err 2")
+
+	err := WrapWithErr(testErr1, testErr2)
+
+	errLogCtx := getLogCtx(err)
+
+	assert.Equal(t.T(), "", errLogCtx)
+
+	err = SetLogCtx(err, logCtx)
+
+	errLogCtx = getLogCtx(err)
+
+	assert.Equal(t.T(), logCtx, errLogCtx)
+}
+
 func AnotherWrapFunc(t *testing.T, err error) error {
 	return Wrap(err)
 }
