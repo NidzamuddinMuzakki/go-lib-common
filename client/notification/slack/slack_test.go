@@ -15,10 +15,10 @@ import (
 func TestNewSlack_ShouldSucceedWithValidation(t *testing.T) {
 	t.Run("Should Succeed New Slack", func(t *testing.T) {
 		dummy := "dummy"
-		sentry := sentryMock.NewISentry(t)
-		slack := slack.NewSlack(
+		mockSentry := sentryMock.NewISentry(t)
+		slackClient := slack.NewSlack(
 			validator.New(),
-			slack.WithSentry(sentry),
+			slack.WithSentry(mockSentry),
 			slack.WithSlackConfigChannel(dummy),
 			slack.WithSlackConfigNotificationSlackTimeoutInSeconds(
 				10,
@@ -26,19 +26,19 @@ func TestNewSlack_ShouldSucceedWithValidation(t *testing.T) {
 			slack.WithSlackConfigURL(dummy),
 		)
 
-		require.NotNil(t, slack)
+		require.NotNil(t, slackClient)
 	})
 }
 
 func TestNewSlack_ErrorOnValidation(t *testing.T) {
 	t.Run("Error On Validation New Slack", func(t *testing.T) {
 		dummy := "dummy"
-		sentry := sentryMock.NewISentry(t)
+		mockSentry := sentryMock.NewISentry(t)
 
 		require.Panics(t, func() {
 			slack.NewSlack(
 				validator.New(),
-				slack.WithSentry(sentry),
+				slack.WithSentry(mockSentry),
 				slack.WithSlackConfigNotificationSlackTimeoutInSeconds(
 					10,
 				),
@@ -50,16 +50,12 @@ func TestNewSlack_ErrorOnValidation(t *testing.T) {
 
 func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 	t.Run("Error On Client Get Url", func(t *testing.T) {
-		span := sentry.Span{}
-		sentry := sentryMock.NewISentry(t)
-		sentry.On("StartSpan", mock.Anything, mock.Anything).
-			Return(&span).
-			Once()
+		mockSentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
 
-		slack := slack.NewSlack(
+		slackClient := slack.NewSlack(
 			validator.New(),
-			slack.WithSentry(sentry),
+			slack.WithSentry(mockSentry),
 			slack.WithSlackConfigChannel(dummy),
 			slack.WithSlackConfigNotificationSlackTimeoutInSeconds(
 				10,
@@ -67,9 +63,9 @@ func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 			slack.WithSlackConfigURL(dummy),
 		)
 
-		require.NotNil(t, slack)
+		require.NotNil(t, slackClient)
 
-		err := slack.Health(context.TODO())
+		err := slackClient.Health(context.TODO())
 		require.Error(t, err)
 
 	})
@@ -78,15 +74,15 @@ func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 func TestSend_ErrorOnClientPostMessage(t *testing.T) {
 	t.Run("Error On Client Post Message", func(t *testing.T) {
 		span := sentry.Span{}
-		sentry := sentryMock.NewISentry(t)
-		sentry.On("StartSpan", mock.Anything, mock.Anything).
+		mockSentry := sentryMock.NewISentry(t)
+		mockSentry.On("StartSpan", mock.Anything, mock.Anything).
 			Return(&span).
 			Once()
 		dummy := "dummy"
 
-		slack := slack.NewSlack(
+		slackClient := slack.NewSlack(
 			validator.New(),
-			slack.WithSentry(sentry),
+			slack.WithSentry(mockSentry),
 			slack.WithSlackConfigChannel(dummy),
 			slack.WithSlackConfigNotificationSlackTimeoutInSeconds(
 				10,
@@ -94,9 +90,9 @@ func TestSend_ErrorOnClientPostMessage(t *testing.T) {
 			slack.WithSlackConfigURL(dummy),
 		)
 
-		require.NotNil(t, slack)
+		require.NotNil(t, slackClient)
 
-		err := slack.Send(
+		err := slackClient.Send(
 			context.TODO(),
 			dummy,
 		)

@@ -15,11 +15,10 @@ import (
 func TestNewMoladinEvo_ShouldSucceedWithValidation(t *testing.T) {
 	t.Run("Should Succeed New MoladinEvo", func(t *testing.T) {
 		dummy := "dummy"
-		sentry := sentryMock.NewISentry(t)
+		mockSentry := sentryMock.NewISentry(t)
 		moladinEvo := moladin_evo.NewMoladinEvo(
-			context.TODO(),
 			validator.New(),
-			moladin_evo.WithSentry(sentry),
+			moladin_evo.WithSentry(mockSentry),
 			moladin_evo.WithBaseUrl(dummy),
 			moladin_evo.WithServicesName(dummy),
 		)
@@ -30,12 +29,11 @@ func TestNewMoladinEvo_ShouldSucceedWithValidation(t *testing.T) {
 func TestNewMoladinEvo_ErrorOnValidation(t *testing.T) {
 	t.Run("Error On Validation New Moladin Evo", func(t *testing.T) {
 		dummy := "dummy"
-		sentry := sentryMock.NewISentry(t)
+		mockSentry := sentryMock.NewISentry(t)
 		require.Panics(t, func() {
 			moladin_evo.NewMoladinEvo(
-				context.TODO(),
 				validator.New(),
-				moladin_evo.WithSentry(sentry),
+				moladin_evo.WithSentry(mockSentry),
 				moladin_evo.WithBaseUrl(dummy),
 			)
 		})
@@ -44,17 +42,12 @@ func TestNewMoladinEvo_ErrorOnValidation(t *testing.T) {
 
 func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 	t.Run("Error On Client Get Url", func(t *testing.T) {
-		span := sentry.Span{}
-		sentry := sentryMock.NewISentry(t)
-		sentry.On("StartSpan", mock.Anything, mock.Anything).
-			Return(&span).
-			Once()
+		mockSentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
 
 		moladinEvo := moladin_evo.NewMoladinEvo(
-			context.TODO(),
 			validator.New(),
-			moladin_evo.WithSentry(sentry),
+			moladin_evo.WithSentry(mockSentry),
 			moladin_evo.WithBaseUrl(dummy),
 			moladin_evo.WithServicesName(dummy),
 		)
@@ -69,16 +62,15 @@ func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 func TestUserDetail_ErrorOnClientGetUrlUser(t *testing.T) {
 	t.Run("Error On Client Get Url User", func(t *testing.T) {
 		span := sentry.Span{}
-		sentry := sentryMock.NewISentry(t)
-		sentry.On("StartSpan", mock.Anything, mock.Anything).
+		mockSentry := sentryMock.NewISentry(t)
+		mockSentry.On("StartSpan", mock.Anything, mock.Anything).
 			Return(&span).
 			Once()
 		dummy := "dummy"
 
 		moladinEvo := moladin_evo.NewMoladinEvo(
-			context.TODO(),
 			validator.New(),
-			moladin_evo.WithSentry(sentry),
+			moladin_evo.WithSentry(mockSentry),
 			moladin_evo.WithBaseUrl(dummy),
 			moladin_evo.WithServicesName(dummy),
 		)

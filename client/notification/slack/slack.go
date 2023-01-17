@@ -38,26 +38,31 @@ func WithSentry(sentry sentry.ISentry) Option {
 		s.Sentry = sentry
 	}
 }
+
 func WithSlackConfigNotificationSlackTimeoutInSeconds(slackConfigNotificationSlackTimeoutInSeconds int) Option {
 	return func(s *SlackPackage) {
 		s.SlackConfigNotificationSlackTimeoutInSeconds = slackConfigNotificationSlackTimeoutInSeconds
 	}
 }
+
 func WithSlackConfigURL(slackConfigURL string) Option {
 	return func(s *SlackPackage) {
 		s.SlackConfigURL = slackConfigURL
 	}
 }
+
 func WithSlackConfigChannel(slackConfigChannel string) Option {
 	return func(s *SlackPackage) {
 		s.SlackConfigChannel = slackConfigChannel
 	}
 }
+
 func WithServiceName(serviceName string) Option {
 	return func(sp *SlackPackage) {
 		sp.ServiceName = serviceName
 	}
 }
+
 func WithServiceEnv(serviceEnv string) Option {
 	return func(sp *SlackPackage) {
 		sp.ServiceEnv = serviceEnv
@@ -123,9 +128,6 @@ func NewSlack(
 }
 
 func (c *SlackPackage) Health(ctx context.Context) error {
-	var span = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackPing)
-	defer span.Finish()
-
 	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s/%s", c.SlackConfigURL, "health")).End()
 	if len(err) > 0 {
 		logger.Error(ctx, ErrHealthCheck.Error(), err[0], logger.Tag{Key: "logCtx", Value: LogCtxName.ClientNotificationSlackPing})

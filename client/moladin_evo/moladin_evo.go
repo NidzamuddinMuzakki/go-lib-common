@@ -36,11 +36,13 @@ func WithBaseUrl(baseUrl string) Option {
 		s.BaseURL = baseUrl
 	}
 }
+
 func WithServicesName(servicesName string) Option {
 	return func(s *MoladinEvoPackage) {
 		s.XServicesName = servicesName
 	}
 }
+
 func WithSentry(sentry sentry.ISentry) Option {
 	return func(s *MoladinEvoPackage) {
 		s.Sentry = sentry
@@ -50,7 +52,6 @@ func WithSentry(sentry sentry.ISentry) Option {
 type Option func(*MoladinEvoPackage)
 
 func NewMoladinEvo(
-	ctx context.Context,
 	validator *validator.Validate,
 	options ...Option,
 ) *MoladinEvoPackage {
@@ -72,8 +73,6 @@ func NewMoladinEvo(
 
 func (c *MoladinEvoPackage) Health(ctx context.Context) error {
 	const logCtx = "common.client.moladin_evo.Health"
-	span := c.Sentry.StartSpan(ctx, logCtx)
-	defer span.Finish()
 
 	resp, _, err := c.client.Clone().Get(fmt.Sprintf("%s", c.BaseURL)).
 		End()
