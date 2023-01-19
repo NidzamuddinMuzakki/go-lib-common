@@ -106,7 +106,7 @@ type Option func(*SlackPackage)
 func NewSlack(
 	validator *validator.Validate,
 	options ...Option,
-) ISlack {
+) *SlackPackage {
 	slackPkg := &SlackPackage{}
 
 	for _, option := range options {

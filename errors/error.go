@@ -3,7 +3,9 @@ package errors
 import (
 	stderrors "errors"
 	"fmt"
+	"os"
 	"runtime"
+	"strings"
 )
 
 type err struct {
@@ -13,32 +15,16 @@ type err struct {
 	keyerr     error
 	stack      []uintptr
 	logCtx     string
-}
-
-func Wrap(err_ error) error {
-	pc, file, no, _ := runtime.Caller(1)
-	retErr := err{
-		original:   err_,
-		wrapped:    nil,
-		stacktrace: " -- At : " + fmt.Sprintf("%s:%d", file, no),
-		keyerr:     GetErrKey(err_),
-		stack:      []uintptr{pc},
-	}
-
-	// since its error is in DFS, we want the message to be like bfs, to be bfs we implement when we call this func
-	if val, ok := err_.(*err); ok {
-		val.stacktrace = retErr.stacktrace + val.stacktrace
-		retErr.stacktrace = ""
-
-		retErr.stack = append(retErr.stack, val.stack...)
-	}
-
-	return &retErr
-
+	isNotify   bool
 }
 
 func (e *err) StackTrace() []uintptr {
 	return e.stack
+}
+
+func (e *err) WithNotify() error {
+	e.isNotify = true
+	return e
 }
 
 func (e *err) Error() string {
@@ -85,15 +71,55 @@ func RootErr(err_ error) error {
 	return err_
 }
 
-// Wrap new error into an existing error
-func WrapWithErr(original error, wrapped error) error {
+func Wrap(err_ error) *err {
 	pc, file, no, _ := runtime.Caller(1)
+
+	// Current working directory
+	dir, _ := os.Getwd()
+	splitDir := strings.Split(dir, "/")
+	rootDir := splitDir[len(splitDir)-1]
+
+	logCtx := generateLogCtx(pc, file, rootDir)
+
+	retErr := err{
+		original:   err_,
+		wrapped:    nil,
+		stacktrace: " -- At : " + fmt.Sprintf("%s:%d", file, no),
+		keyerr:     GetErrKey(err_),
+		stack:      []uintptr{pc},
+		logCtx:     logCtx,
+	}
+
+	// since its error is in DFS, we want the message to be like bfs, to be bfs we implement when we call this func
+	if val, ok := err_.(*err); ok {
+		val.stacktrace = retErr.stacktrace + val.stacktrace
+		retErr.stacktrace = ""
+
+		retErr.stack = append(retErr.stack, val.stack...)
+	}
+
+	return &retErr
+
+}
+
+// WrapWithErr wrap new error into an existing error
+func WrapWithErr(original error, wrapped error) *err {
+	pc, file, no, _ := runtime.Caller(1)
+
+	// Current working directory
+	dir, _ := os.Getwd()
+	splitDir := strings.Split(dir, "/")
+	rootDir := splitDir[len(splitDir)-1]
+
+	logCtx := generateLogCtx(pc, file, rootDir)
+
 	return &err{
 		original:   original,
 		wrapped:    wrapped,
 		keyerr:     GetErrKey(wrapped),
 		stacktrace: " -- At : " + fmt.Sprintf("%s:%d", file, no),
 		stack:      []uintptr{pc},
+		logCtx:     logCtx,
 	}
 }
 
@@ -106,20 +132,15 @@ func GetErrKey(err_ error) error {
 	return err_
 }
 
-// SetLogCtx will set the logCtx of the error
-func SetLogCtx(err_ error, logCtx string) error {
-	if val, ok := err_.(*err); ok {
-		val.logCtx = logCtx
-	}
+// generateLogCtx will generate the log context
+func generateLogCtx(pc uintptr, file, rootDir string) string {
+	var filePath, funcName string
+	filePath = strings.Split(file, fmt.Sprintf("/%s/", rootDir))[1]
+	filePath = strings.Split(filePath, ".")[0]
+	filePath = strings.ReplaceAll(filePath, "/", ".")
+	funcName = runtime.FuncForPC(pc).Name()
+	i := strings.LastIndex(funcName, ".")
+	funcName = funcName[i+1:]
 
-	return err_
-}
-
-// getLogCtx will return the logCtx of the error
-func getLogCtx(err_ error) string {
-	if val, ok := err_.(*err); ok {
-		return val.logCtx
-	}
-
-	return ""
+	return fmt.Sprintf("%s.%s", filePath, funcName)
 }

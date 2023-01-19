@@ -169,7 +169,7 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
 
 ```
 
-### Using HttpErrRespAndSendNotif
+### Using HttpErrResp
 
 ```go
     // userrepo.go
@@ -180,10 +180,10 @@ This package was inspired from [`errors`](https://github.com/PumpkinSeed/errors)
 
     sql, args, err := squirrel.ToSql()
     if err != nil {
-        // will wrap error from squirrel.ToSql() with ErrSQLQueryBuilder 
-        wrapErr := liberrors.WrapWithErr(err, ErrSQLQueryBuilder)
-        // will set logCtx to wrapErr
-        return nil, 0, liberrors.SetLogCtx(wrapErr, logCtx)
+        // will wrap error from squirrel.ToSql() with ErrSQLQueryBuilder
+        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder) // will return error to client and send notify to slack if error >= 500
+		// OR
+        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithNotify() // will return error to client and force to send notify
     }
 
 ```
@@ -199,7 +199,7 @@ type userHttp struct {
 func (h *userHttp) Delete(c *gin.Context) {
     err := h.userService.GetUser()
     if err != nil {
-        liberrors.HttpErrRespAndSendNotif(ctx, err, c, h.commonRegistry)
+        liberrors.HttpErrResp(ctx, commonError.ParamHttpErrResp{Err: err, GinCtx: c, Registry: h.commonRegistry})
         return
     }
 }

@@ -96,17 +96,17 @@ func (t *TestErrorSuite) TestGetErrKey() {
 	testErr1 := errors.New("test err 1")
 	testErr2 := errors.New("test err 2")
 
-	err := WrapWithErr(testErr1, testErr2)
+	err1 := WrapWithErr(testErr1, testErr2)
 
-	errKey := GetErrKey(err)
+	errKey := GetErrKey(err1)
 
 	assert.Equal(t.T(), testErr2, errKey)
 
-	err = context.DeadlineExceeded
+	err2 := context.DeadlineExceeded
 
-	errKey = GetErrKey(err)
+	errKey = GetErrKey(err2)
 
-	assert.Equal(t.T(), err, errKey)
+	assert.Equal(t.T(), err2, errKey)
 
 }
 
@@ -114,10 +114,10 @@ func (t *TestErrorSuite) TestGetStackTrace() {
 	err1 := errors.New("test err 1")
 	err2 := errors.New("test err 2")
 
-	errWrap := WrapWithErr(err1, err2)
-	errWrap = AnotherWrapFunc(t.T(), errWrap)
+	errWrap1 := WrapWithErr(err1, err2)
+	errWrap2 := AnotherWrapFunc(t.T(), errWrap1)
 	var stackPtr []uintptr
-	if err_, ok := errWrap.(*err); ok {
+	if err_, ok := errWrap2.(*err); ok {
 		stackPtr = err_.StackTrace()
 	}
 	frames := runtime.CallersFrames(stackPtr)
@@ -134,24 +134,6 @@ func (t *TestErrorSuite) TestGetStackTrace() {
 
 	assert.Equal(t.T(), []string{"bitbucket.org/moladinTech/go-lib-common/errors.AnotherWrapFunc",
 		"bitbucket.org/moladinTech/go-lib-common/errors.(*TestErrorSuite).TestGetStackTrace"}, funcName)
-}
-
-func (t *TestErrorSuite) TestSetAndGetLogCtx() {
-	logCtx := "errors.TestSetLogCtx"
-	testErr1 := errors.New("test err 1")
-	testErr2 := errors.New("test err 2")
-
-	err := WrapWithErr(testErr1, testErr2)
-
-	errLogCtx := getLogCtx(err)
-
-	assert.Equal(t.T(), "", errLogCtx)
-
-	err = SetLogCtx(err, logCtx)
-
-	errLogCtx = getLogCtx(err)
-
-	assert.Equal(t.T(), logCtx, errLogCtx)
 }
 
 func AnotherWrapFunc(t *testing.T, err error) error {

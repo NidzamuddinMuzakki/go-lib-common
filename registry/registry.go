@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/cache"
 	"bitbucket.org/moladinTech/go-lib-common/client/aws"
 	"bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
+	"bitbucket.org/moladinTech/go-lib-common/client/notification"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
 	"bitbucket.org/moladinTech/go-lib-common/encryption"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
@@ -20,6 +21,7 @@ type IRegistry interface {
 	GetS3() aws.S3
 	GetMoladinEvo() moladin_evo.IMoladinEvo
 	GetSlack() slack.ISlack
+	GetNotif() notification.INotification
 	GetAuthMiddleware() auth.IMiddlewareAuth
 	GetPanicRecoveryMiddleware() panic_recovery.IMiddlewarePanicRecovery
 	GetTraceMiddleware() tracer.IMiddlewareTracer
@@ -35,6 +37,7 @@ type registry struct {
 	s3                      aws.S3
 	moladinEvo              moladin_evo.IMoladinEvo
 	slack                   slack.ISlack
+	notif                   notification.INotification
 	authMiddleware          auth.IMiddlewareAuth
 	panicRecoveryMiddleware panic_recovery.IMiddlewarePanicRecovery
 	tracerMiddleware        tracer.IMiddlewareTracer
@@ -66,6 +69,12 @@ func WithMoladinEvo(moladinEvo moladin_evo.IMoladinEvo) Option {
 func WithSlack(slack slack.ISlack) Option {
 	return func(s *registry) {
 		s.slack = slack
+	}
+}
+
+func WithNotif(notif notification.INotification) Option {
+	return func(s *registry) {
+		s.notif = notif
 	}
 }
 
@@ -145,6 +154,10 @@ func (r *registry) GetMoladinEvo() moladin_evo.IMoladinEvo {
 
 func (r *registry) GetSlack() slack.ISlack {
 	return r.slack
+}
+
+func (r *registry) GetNotif() notification.INotification {
+	return r.notif
 }
 
 func (r *registry) GetAuthMiddleware() auth.IMiddlewareAuth {

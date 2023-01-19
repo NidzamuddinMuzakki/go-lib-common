@@ -10,49 +10,47 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// helper to logger the error and send response
-func HttpErrResp(ctx context.Context, err error, c *gin.Context, args ...interface{}) {
-	logger.Error(ctx, `error`, err)
-	if val, ok := MapErrorResponse[GetErrKey(err)]; ok {
-		c.JSON(val.StatusCode, val.Response)
-	} else { // default return message when error happen
-		c.JSON(http.StatusInternalServerError, response.Response{
-			Message: http.StatusText(http.StatusInternalServerError),
-			Status:  response.StatusFail,
-		})
-	}
+type ParamHttpErrResp struct {
+	Err      error
+	GinCtx   *gin.Context
+	Registry registry.IRegistry
 }
 
-// HttpErrRespAndSendNotif is helper to logger the error and send response and send notification (if statusCode >= 500)
-func HttpErrRespAndSendNotif(ctx context.Context, err error, c *gin.Context, commonRegistry registry.IRegistry) {
-	logCtx := getLogCtx(err)
-	logger.Error(ctx, `error`, err, logger.Tag{Key: "logCtx", Value: logCtx})
-	if val, ok := MapErrorResponse[GetErrKey(err)]; ok {
-		if val.StatusCode >= 500 {
-			commonRegistry.GetSentry().CaptureException(err)
-			// send notif
-			slackMessage := commonRegistry.GetSlack().GetFormattedMessage(logCtx, ctx, err)
-			errSlack := commonRegistry.GetSlack().Send(ctx, slackMessage)
-			if errSlack != nil {
-				logger.Error(ctx, "Error sending notif to slack", err)
-			}
-		}
+// HttpErrResp is helper to logger the error, send response and send notification (if statusCode >= 500)
+func HttpErrResp(ctx context.Context, p ParamHttpErrResp) {
+	var (
+		c   = p.GinCtx
+		e   = p.Err
+		rgs = p.Registry
 
-		// send response
-		c.JSON(val.StatusCode, val.Response)
-	} else { // default return message when error happen
-		commonRegistry.GetSentry().CaptureException(err)
+		v1, ok1 = MapErrorResponse[GetErrKey(e)]
+		v2, ok2 = e.(*err)
+	)
+
+	if ok2 {
+		logger.Error(ctx, `error`, e, logger.Tag{Key: "logCtx", Value: v2.logCtx})
+	} else {
+		logger.Error(ctx, `error`, e)
+	}
+
+	if ok2 && (!ok1 || (ok1 && v1.StatusCode >= 500) || v2.isNotify) {
+		rgs.GetSentry().CaptureException(e)
 		// send notif
-		slackMessage := commonRegistry.GetSlack().GetFormattedMessage(logCtx, ctx, err)
-		errSlack := commonRegistry.GetSlack().Send(ctx, slackMessage)
+		slackMessage := rgs.GetNotif().GetFormattedMessage(v2.logCtx, ctx, e)
+		errSlack := rgs.GetNotif().Send(ctx, slackMessage)
 		if errSlack != nil {
-			logger.Error(ctx, "Error sending notif to slack", err)
+			logger.Error(ctx, "Error sending notif to slack", errSlack)
 		}
+	}
 
-		// send response
+	if !ok1 {
 		c.JSON(http.StatusInternalServerError, response.Response{
 			Message: http.StatusText(http.StatusInternalServerError),
 			Status:  response.StatusFail,
 		})
+		return
 	}
+
+	c.JSON(v1.StatusCode, v1.Response)
+	return
 }
