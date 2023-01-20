@@ -9,13 +9,14 @@ import (
 )
 
 type err struct {
-	original   error
-	wrapped    error
-	stacktrace string
-	keyerr     error
-	stack      []uintptr
-	logCtx     string
-	isNotify   bool
+	original      error
+	wrapped       error
+	stacktrace    string
+	keyerr        error
+	stack         []uintptr
+	logCtx        string
+	isNotify      bool
+	isSuccessResp bool
 }
 
 func (e *err) StackTrace() []uintptr {
@@ -24,6 +25,11 @@ func (e *err) StackTrace() []uintptr {
 
 func (e *err) WithNotify() error {
 	e.isNotify = true
+	return e
+}
+
+func (e *err) WithSuccessResp() error {
+	e.isSuccessResp = true
 	return e
 }
 

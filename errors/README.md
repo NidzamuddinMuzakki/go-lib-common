@@ -206,8 +206,12 @@ func (h *userHttp) Delete(c *gin.Context) {
 
 ```
 
-
-
-
-
-
+### Using HttpResp
+```go
+   response.HttpResp(ctx, response.ParamHttpErrResp{Err: err, GinCtx: c, Registry: h.common}).
+        SuccessResp(http.StatusOK, response.Response{
+            Status:  response.StatusSuccess,
+            Message: http.StatusText(http.StatusOK),
+            Data:    map[string]interface{}{"data": "ok"},
+        })
+```

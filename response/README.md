@@ -18,7 +18,7 @@ What's got in this package.
 	})
 
     // With Variable Status Error
-	c.JSON(http.StatusOK, response.Response{
+	c.JSON(http.StatusInternalServerError, response.Response{
 		Status:  StatusError,
 		Message: "Internal Server Error",
 	})
