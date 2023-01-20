@@ -25,6 +25,10 @@ func NewRedis(host, password string, db int) *Redis {
 	return r
 }
 
+func (r *Redis) GetRedisInstance() *redis.Client {
+	return r.client
+}
+
 func (r *Redis) Set(ctx context.Context, data Data, duration time.Duration) error {
 	raw, err := json.Marshal(data.Value)
 	if err != nil {

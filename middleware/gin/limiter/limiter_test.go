@@ -1,18 +1,19 @@
 package limiter
 
 import (
-	mocks "bitbucket.org/moladinTech/go-lib-common/mocks/cache"
-	"bitbucket.org/moladinTech/go-lib-common/validator"
 	"context"
-	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	mocks "bitbucket.org/moladinTech/go-lib-common/mocks/cache"
+	"bitbucket.org/moladinTech/go-lib-common/validator"
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestShouldBeAbleToGetRequest(t *testing.T) {

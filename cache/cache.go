@@ -18,6 +18,7 @@ type Data struct {
 }
 
 type Cacher interface {
+	GetRedisInstance() *redis.Client
 	Set(ctx context.Context, data Data, duration time.Duration) error
 	Get(ctx context.Context, key Key, dest any) error
 	Delete(ctx context.Context, key Key) error

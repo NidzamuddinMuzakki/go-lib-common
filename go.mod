@@ -20,6 +20,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/andreburgaud/crypt2go v1.1.0
 	github.com/aws/aws-sdk-go v1.17.7
+	github.com/bsm/redislock v0.7.2
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/jinzhu/copier v0.3.5
@@ -32,7 +33,10 @@ require (
 	golang.org/x/exp v0.0.0-20221006183845-316c7553db56
 )
 
-require github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
+require (
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
+	github.com/onsi/gomega v1.21.1 // indirect
+)
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize v1.4.1
