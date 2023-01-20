@@ -3,7 +3,7 @@ module bitbucket.org/moladinTech/go-lib-common
 go 1.18
 
 require (
-	github.com/getsentry/sentry-go v0.14.0
+	github.com/getsentry/sentry-go v0.17.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-co-op/gocron v1.17.0
 	github.com/go-playground/locales v0.14.0

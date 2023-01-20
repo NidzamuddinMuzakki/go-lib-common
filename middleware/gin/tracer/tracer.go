@@ -62,10 +62,7 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 		tagMethod  = "method"
 	)
 	return func(c *gin.Context) {
-		const logCtx = "common.middleware.gin.tracer.Tracer"
 		reqCtx := c.Request.Context()
-		span := s.Sentry.StartSpan(reqCtx, logCtx)
-		defer span.Finish()
 		// trace when request is getting started
 		start := time.Now()
 		ctxReq := logger.AddLoggingTag(reqCtx, logger.Tag{Key: tagPath, Value: c.Request.URL.Path})

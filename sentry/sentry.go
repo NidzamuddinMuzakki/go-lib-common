@@ -29,10 +29,11 @@ const (
 )
 
 type SentryPackage struct {
-	Dsn        string  `validate:"required"`
-	Env        string  `validate:"required"`
-	SampleRate float64 `validate:"required"`
-	Debug      bool
+	Dsn           string  `validate:"required"`
+	Env           string  `validate:"required"`
+	SampleRate    float64 `validate:"required"`
+	EnableTracing bool
+	Debug         bool
 }
 
 func WithDsn(dsn string) Option {
@@ -53,6 +54,11 @@ func WithEnv(env string) Option {
 func WithSampleRate(sampleRate float64) Option {
 	return func(s *SentryPackage) {
 		s.SampleRate = sampleRate
+	}
+}
+func WithEnableTracing(enableTracing bool) Option {
+	return func(s *SentryPackage) {
+		s.EnableTracing = enableTracing
 	}
 }
 
@@ -81,7 +87,9 @@ func NewSentry(
 	validator *validator.Validate,
 	options ...Option,
 ) ISentry {
-	sentryPkg := &SentryPackage{}
+	sentryPkg := &SentryPackage{
+		EnableTracing: true,
+	}
 
 	for _, option := range options {
 		option(sentryPkg)
@@ -92,6 +100,7 @@ func NewSentry(
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
+		EnableTracing:    sentryPkg.EnableTracing,
 		Dsn:              sentryPkg.Dsn,
 		Debug:            sentryPkg.Debug,
 		Environment:      sentryPkg.Env,

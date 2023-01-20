@@ -11,7 +11,6 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/tracer"
 	sentryMock "bitbucket.org/moladinTech/go-lib-common/sentry/mocks"
 	"bitbucket.org/moladinTech/go-lib-common/validator"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -29,7 +28,6 @@ func TestNewTracer_ShouldSucceedWithValidation(t *testing.T) {
 
 func TestTracer_ShouldSucceed(t *testing.T) {
 	t.Run("Should Succeed Tracer", func(t *testing.T) {
-		span := sentry.Span{}
 		sentry := sentryMock.NewISentry(t)
 		sentry.On("SetStartTransaction",
 			mock.Anything,
@@ -37,10 +35,6 @@ func TestTracer_ShouldSucceed(t *testing.T) {
 			"POST /",
 			mock.Anything,
 		).Once()
-
-		sentry.On("StartSpan", mock.Anything, mock.Anything).
-			Return(&span).
-			Once()
 
 		tracer := tracer.NewTracer(validator.New(),
 			tracer.WithSentry(sentry),
