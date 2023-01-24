@@ -23,12 +23,12 @@ func (e *err) StackTrace() []uintptr {
 	return e.stack
 }
 
-func (e *err) WithNotify() error {
+func (e *err) WithNotify() *err {
 	e.isNotify = true
 	return e
 }
 
-func (e *err) WithSuccessResp() error {
+func (e *err) WithSuccessResp() *err {
 	e.isSuccessResp = true
 	return e
 }

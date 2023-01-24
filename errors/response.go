@@ -61,17 +61,16 @@ type httpResp struct {
 	GinCtx *gin.Context
 }
 
-func (h *httpResp) SuccessResp(statusCode int, response interface{}) {
+func (h *httpResp) Return(statusCode int, response interface{}) {
 	if h != nil {
 		h.GinCtx.JSON(statusCode, response)
 	}
 }
 
 // HttpResp is helper to logger the error, send response and send notification (if statusCode >= 500)
-func HttpResp(ctx context.Context, p ParamHttpErrResp) *httpResp {
+func HttpResp(ctx context.Context, e error, p ParamHttpErrResp) *httpResp {
 	var (
 		c   = p.GinCtx
-		e   = p.Err
 		rgs = p.Registry
 		hr  = &httpResp{GinCtx: c}
 
