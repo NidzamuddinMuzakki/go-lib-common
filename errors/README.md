@@ -207,9 +207,31 @@ func (h *userHttp) Delete(c *gin.Context) {
 ```
 
 ### Using HttpResp
+
 ```go
-   response.HttpResp(ctx, response.ParamHttpErrResp{Err: err, GinCtx: c, Registry: h.common}).
-        SuccessResp(http.StatusOK, response.Response{
+    // userrepo.go
+    var (
+        logCtx = "reposiotry.GetUser"
+        ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
+    )
+
+    sql, args, err := squirrel.ToSql()
+    if err != nil {
+        // will wrap error from squirrel.ToSql() with ErrSQLQueryBuilder
+        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder) // will return error to client and send notify to slack if error >= 500 
+        // OR
+        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithNotify() // will return error to client and force to send notify
+        // OR
+        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithSuccessResp() // force return error to client
+    }
+
+```
+
+```go
+   // userhttp.go
+
+   response.HttpResp(ctx, err, response.ParamHttpErrResp{GinCtx: c, Registry: h.common}).
+        Return(http.StatusOK, response.Response{
             Status:  response.StatusSuccess,
             Message: http.StatusText(http.StatusOK),
             Data:    map[string]interface{}{"data": "ok"},
