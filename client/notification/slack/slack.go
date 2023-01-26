@@ -3,10 +3,13 @@ package slack
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"time"
 
+	"bitbucket.org/moladinTech/go-lib-common/cache"
+	"bitbucket.org/moladinTech/go-lib-common/client/notification/limiter"
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
@@ -31,6 +34,7 @@ type SlackPackage struct {
 	ServiceName                                  string
 	ServiceEnv                                   string
 	client                                       *gorequest.SuperAgent
+	limiter                                      *limiter.SlackLimiter
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -66,6 +70,12 @@ func WithServiceName(serviceName string) Option {
 func WithServiceEnv(serviceEnv string) Option {
 	return func(sp *SlackPackage) {
 		sp.ServiceEnv = serviceEnv
+	}
+}
+
+func WithLimiter(slackLimiter *limiter.SlackLimiter) Option {
+	return func(sp *SlackPackage) {
+		sp.limiter = slackLimiter
 	}
 }
 
@@ -148,6 +158,28 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 		span     = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackSend)
 	)
 	defer span.Finish()
+
+	// if limiter is set, use limiter. This will prevent breaking changes
+	if c.limiter != nil {
+		//key = service-name:slack-notification:sha256z(errormessage)
+		readableHash := fmt.Sprintf("%x", sha256.Sum256([]byte(message)))
+		cacheKey := fmt.Sprintf("%s:slack-notification:%s", c.ServiceName, readableHash)
+		isSuccessSet, err := c.limiter.LimitChecker(ctx, cache.Data{
+			Key:   cache.Key(cacheKey),
+			Value: "{}",
+		})
+
+		// return error when setting key notif to redis failed,
+		// this to prevent someone abusing notification to slack.
+		if err != nil {
+			return err
+		}
+
+		// if key already exist in redis, no need to send notif to slack
+		if !isSuccessSet {
+			return nil
+		}
+	}
 
 	resp, _, err := c.client.Clone().Post(fmt.Sprintf("%s/%s", c.SlackConfigURL, "slack")).
 		SendStruct(Payload{

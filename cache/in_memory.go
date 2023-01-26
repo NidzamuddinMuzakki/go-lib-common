@@ -162,3 +162,7 @@ func (im *InMemory) Expire(ctx context.Context, key string, ttl time.Duration) (
 func (im *InMemory) GetRedisInstance() *redis.Client {
 	return nil
 }
+
+func (im *InMemory) SetNx(ctx context.Context, data Data, duration time.Duration) (isSuccessSet bool, err error) {
+	return false, nil
+}

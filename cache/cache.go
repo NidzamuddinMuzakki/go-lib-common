@@ -20,6 +20,7 @@ type Data struct {
 type Cacher interface {
 	GetRedisInstance() *redis.Client
 	Set(ctx context.Context, data Data, duration time.Duration) error
+	SetNx(ctx context.Context, data Data, duration time.Duration) (isSuccessSet bool, err error)
 	Get(ctx context.Context, key Key, dest any) error
 	Delete(ctx context.Context, key Key) error
 	BatchSet(ctx context.Context, datas []Data, duration time.Duration) error

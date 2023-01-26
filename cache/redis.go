@@ -159,3 +159,17 @@ func (r *Redis) Expire(ctx context.Context, key string, ttl time.Duration) (*red
 	val := r.client.Expire(ctx, key, ttl)
 	return val, val.Err()
 }
+
+func (r *Redis) SetNx(ctx context.Context, data Data, duration time.Duration) (bool, error) {
+	raw, err := json.Marshal(data.Value)
+	if err != nil {
+		return false, err
+	}
+
+	result := r.client.SetNX(ctx, string(data.Key), raw, duration)
+	if result.Err() != nil {
+		return false, result.Err()
+	}
+
+	return result.Val(), nil
+}
