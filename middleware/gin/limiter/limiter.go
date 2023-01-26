@@ -1,21 +1,27 @@
 package limiter
 
 import (
-	"bitbucket.org/moladinTech/go-lib-common/cache"
-	"bitbucket.org/moladinTech/go-lib-common/response"
-	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"net/http"
 	"time"
+
+	"bitbucket.org/moladinTech/go-lib-common/cache"
+	"bitbucket.org/moladinTech/go-lib-common/cast"
+	"bitbucket.org/moladinTech/go-lib-common/logger"
+	"bitbucket.org/moladinTech/go-lib-common/response"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type IMiddlewareLimiter interface {
-	Limit(key string, ttl time.Duration, limit uint) gin.HandlerFunc
+	WithCustomLimit(rt RateLimit) gin.HandlerFunc
 }
 
 type MiddlewareLimitPackage struct {
-	Cache cache.Cacher `validate:"required"`
+	Cache        cache.Cacher `validate:"required"`
+	DefaultTTL   uint         `validate:"required"`
+	DefaultLimit uint         `validate:"required"`
 }
 
 type Option func(*MiddlewareLimitPackage)
@@ -26,44 +32,91 @@ func WithCacher(cache cache.Cacher) Option {
 	}
 }
 
-func NewLimiter(validator *validator.Validate, options ...Option) IMiddlewareLimiter {
-	middlewareLimitPackage := &MiddlewareLimitPackage{}
+func NewLimiter(validator *validator.Validate, options ...Option) (*MiddlewareLimitPackage, gin.HandlerFunc) {
+	mlp := &MiddlewareLimitPackage{
+		DefaultTTL:   1,
+		DefaultLimit: 100,
+	}
 
 	for _, option := range options {
-		option(middlewareLimitPackage)
+		option(mlp)
 	}
-	err := validator.Struct(middlewareLimitPackage)
+	err := validator.Struct(mlp)
 	if err != nil {
 		panic(commonValidator.ToErrResponse(err))
 	}
 
-	return middlewareLimitPackage
-}
+	hf := func(c *gin.Context) {
+		var (
+			logCtx = "middleware.gin.limiter.limiter.Limit"
+			ctx    = c.Request.Context()
 
-func (a *MiddlewareLimitPackage) Limit(key string, ttl time.Duration, limit uint) gin.HandlerFunc {
-	return func(c *gin.Context) {
+			key = c.FullPath()
+		)
 
-		incr, err := a.Cache.Incr(c.Request.Context(), key)
+		incr, err := mlp.Cache.Incr(ctx, key)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, response.Response{
-				Status:  response.StatusError,
-				Message: http.StatusText(http.StatusInternalServerError),
+			logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
+		}
+
+		if incr.Val() == 1 {
+			_, err := mlp.Cache.Expire(ctx, key, time.Duration(mlp.DefaultTTL)*time.Second)
+			if err != nil {
+				logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
+			}
+		}
+
+		if incr.Val() > int64(mlp.DefaultLimit) {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, response.Response{
+				Status:  response.StatusFail,
+				Message: http.StatusText(http.StatusTooManyRequests),
 			})
 			return
 		}
 
+		c.Next()
+	}
+
+	return mlp, hf
+}
+
+type RateLimit struct {
+	TTL   *uint
+	Limit *uint
+}
+
+// WithCustomLimit custom rate limit
+// With default rate limit is 100 requests per seconds
+func (a *MiddlewareLimitPackage) WithCustomLimit(rt RateLimit) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var (
+			logCtx = "middleware.gin.limiter.limiter.WithCustomLimit"
+			ctx    = c.Request.Context()
+
+			key = c.FullPath()
+		)
+
+		if rt.TTL == nil {
+			rt.TTL = cast.NewPointer[uint](a.DefaultTTL)
+		}
+
+		if rt.Limit == nil {
+			rt.Limit = cast.NewPointer[uint](a.DefaultLimit)
+		}
+
+		incr, err := a.Cache.Incr(ctx, key)
+		if err != nil {
+			logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
+		}
+
 		if incr.Val() == 1 {
-			_, err := a.Cache.Expire(c.Request.Context(), key, ttl)
+			_, err := a.Cache.Expire(ctx, key, time.Duration(*rt.TTL)*time.Second)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusInternalServerError, response.Response{
-					Status:  response.StatusError,
-					Message: http.StatusText(http.StatusInternalServerError),
-				})
-				return
+				logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
 			}
 		}
 
-		if incr.Val() > int64(limit) {
+		if incr.Val() > int64(*rt.Limit) {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, response.Response{
 				Status:  response.StatusFail,
 				Message: http.StatusText(http.StatusTooManyRequests),
