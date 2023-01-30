@@ -164,5 +164,21 @@ func (im *InMemory) GetRedisInstance() *redis.Client {
 }
 
 func (im *InMemory) SetNx(ctx context.Context, data Data, duration time.Duration) (isSuccessSet bool, err error) {
-	return false, nil
+	if val, ok := im.data[data.Key]; ok {
+		if val.TTL.Before(time.Now()) {
+			err = im.Delete(ctx, data.Key)
+			if err != nil {
+				return false, err
+			}
+		} else {
+			return false, nil
+		}
+	}
+
+	err = im.Set(ctx, data, duration)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
