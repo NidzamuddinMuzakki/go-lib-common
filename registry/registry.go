@@ -3,6 +3,7 @@ package registry
 import (
 	"bitbucket.org/moladinTech/go-lib-common/cache"
 	"bitbucket.org/moladinTech/go-lib-common/client/aws"
+	"bitbucket.org/moladinTech/go-lib-common/client/gcp"
 	"bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
@@ -19,6 +20,7 @@ import (
 type IRegistry interface {
 	GetSentry() sentry.ISentry
 	GetS3() aws.S3
+	GetGCS() gcp.GCSClient
 	GetMoladinEvo() moladin_evo.IMoladinEvo
 	GetSlack() slack.ISlack
 	GetNotif() notification.INotification
@@ -35,6 +37,7 @@ type IRegistry interface {
 type registry struct {
 	sentry                  sentry.ISentry
 	s3                      aws.S3
+	gcs                     gcp.GCSClient
 	moladinEvo              moladin_evo.IMoladinEvo
 	slack                   slack.ISlack
 	notif                   notification.INotification
@@ -57,6 +60,12 @@ func WithSentry(sentry sentry.ISentry) Option {
 func WithS3(s3 aws.S3) Option {
 	return func(s *registry) {
 		s.s3 = s3
+	}
+}
+
+func WithGCS(gcs gcp.GCSClient) Option {
+	return func(s *registry) {
+		s.gcs = gcs
 	}
 }
 
@@ -146,6 +155,10 @@ func (r *registry) GetSentry() sentry.ISentry {
 
 func (r *registry) GetS3() aws.S3 {
 	return r.s3
+}
+
+func (r *registry) GetGCS() gcp.GCSClient {
+	return r.gcs
 }
 
 func (r *registry) GetMoladinEvo() moladin_evo.IMoladinEvo {
