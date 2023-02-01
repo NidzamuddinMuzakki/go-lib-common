@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"bitbucket.org/moladinTech/go-lib-common/cache"
@@ -161,8 +162,14 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 
 	// if limiter is set, use limiter. This will prevent breaking changes
 	if c.limiter != nil {
+		// get error message from message
+		errMsg := message
+		idx := strings.LastIndex(message, "*Message:*")
+		if idx >= 0 {
+			errMsg = message[idx+11:]
+		}
 		//key = service-name:slack-notification:sha256z(errormessage)
-		readableHash := fmt.Sprintf("%x", sha256.Sum256([]byte(message)))
+		readableHash := fmt.Sprintf("%x", sha256.Sum256([]byte(errMsg)))
 		cacheKey := fmt.Sprintf("%s:slack-notification:%s", c.ServiceName, readableHash)
 		isSuccessSet, err := c.limiter.LimitChecker(ctx, cache.Data{
 			Key:   cache.Key(cacheKey),

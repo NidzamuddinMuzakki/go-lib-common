@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,6 +21,7 @@ type IMiddlewareLimiter interface {
 
 type MiddlewareLimitPackage struct {
 	Cache        cache.Cacher `validate:"required"`
+	ServiceName  string       `validate:"required"`
 	DefaultTTL   uint         `validate:"required"`
 	DefaultLimit uint         `validate:"required"`
 }
@@ -29,6 +31,12 @@ type Option func(*MiddlewareLimitPackage)
 func WithCacher(cache cache.Cacher) Option {
 	return func(s *MiddlewareLimitPackage) {
 		s.Cache = cache
+	}
+}
+
+func WithServiceName(serviceName string) Option {
+	return func(s *MiddlewareLimitPackage) {
+		s.ServiceName = serviceName
 	}
 }
 
@@ -51,7 +59,7 @@ func NewLimiter(validator *validator.Validate, options ...Option) (*MiddlewareLi
 			logCtx = "middleware.gin.limiter.limiter.Limit"
 			ctx    = c.Request.Context()
 
-			key = c.FullPath()
+			key = fmt.Sprintf("%s:%s", mlp.ServiceName, c.FullPath())
 		)
 
 		incr, err := mlp.Cache.Incr(ctx, key)
@@ -93,7 +101,7 @@ func (a *MiddlewareLimitPackage) WithCustomLimit(rt RateLimit) gin.HandlerFunc {
 			logCtx = "middleware.gin.limiter.limiter.WithCustomLimit"
 			ctx    = c.Request.Context()
 
-			key = c.FullPath()
+			key = fmt.Sprintf("%s:%s", a.ServiceName, c.FullPath())
 		)
 
 		if rt.TTL == nil {

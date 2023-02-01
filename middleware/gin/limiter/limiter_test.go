@@ -25,7 +25,11 @@ func TestShouldBeAbleToGetRequestWithDefaultValue(t *testing.T) {
 	mockCacher.On("Incr", context.TODO(), mock.Anything).Return(red, nil)
 	mockCacher.On("Expire", context.TODO(), mock.Anything, mock.Anything).Return(nil, nil)
 
-	_, limiter := NewLimiter(validator.New(), WithCacher(mockCacher))
+	_, limiter := NewLimiter(
+		validator.New(),
+		WithCacher(mockCacher),
+		WithServiceName("test-service"),
+	)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
@@ -57,7 +61,11 @@ func TestShouldBeAbleToGetRequestWithCustomValue(t *testing.T) {
 	mockCacher.On("Incr", context.TODO(), mock.Anything).Return(red, nil)
 	mockCacher.On("Expire", context.TODO(), mock.Anything, mock.Anything).Return(nil, nil)
 
-	mlp, _ := NewLimiter(validator.New(), WithCacher(mockCacher))
+	mlp, _ := NewLimiter(
+		validator.New(),
+		WithCacher(mockCacher),
+		WithServiceName("test-service"),
+	)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
@@ -89,7 +97,11 @@ func TestShouldBeUnableToGetRequest(t *testing.T) {
 	mockCacher.On("Incr", context.TODO(), mock.Anything).Return(red, nil)
 	mockCacher.On("Expire", context.TODO(), mock.Anything, mock.Anything).Return(nil, nil)
 
-	mlp, _ := NewLimiter(validator.New(), WithCacher(mockCacher))
+	mlp, _ := NewLimiter(
+		validator.New(),
+		WithCacher(mockCacher),
+		WithServiceName("test-service"),
+	)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()

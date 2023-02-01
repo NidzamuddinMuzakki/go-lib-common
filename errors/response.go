@@ -35,7 +35,7 @@ func HttpErrResp(ctx context.Context, p ParamHttpErrResp) {
 		logger.Error(ctx, `error`, e)
 	}
 
-	if !ok1 || (ok1 && v1.StatusCode >= 500) || v2.isNotify {
+	if !ok1 || (ok1 && v1.StatusCode >= 500) && !ok2 || ok2 && !v2.isNotify {
 		rgs.GetSentry().CaptureException(e)
 		// send notif
 		slackMessage := rgs.GetNotif().GetFormattedMessage(logCtx, ctx, e)
@@ -90,7 +90,7 @@ func HttpResp(ctx context.Context, e error, p ParamHttpErrResp) *httpResp {
 		logger.Error(ctx, `error`, e)
 	}
 
-	if !ok1 || (ok1 && v1.StatusCode >= 500) || v2.isNotify {
+	if !ok1 || (ok1 && v1.StatusCode >= 500) && !ok2 || ok2 && !v2.isNotify {
 		rgs.GetSentry().CaptureException(e)
 		// send notif
 		slackMessage := rgs.GetNotif().GetFormattedMessage(logCtx, ctx, e)

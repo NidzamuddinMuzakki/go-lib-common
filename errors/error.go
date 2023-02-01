@@ -1,11 +1,15 @@
 package errors
 
 import (
+	"context"
 	stderrors "errors"
 	"fmt"
 	"os"
 	"runtime"
 	"strings"
+
+	"bitbucket.org/moladinTech/go-lib-common/logger"
+	"bitbucket.org/moladinTech/go-lib-common/registry"
 )
 
 type err struct {
@@ -23,7 +27,15 @@ func (e *err) StackTrace() []uintptr {
 	return e.stack
 }
 
-func (e *err) WithNotify() *err {
+func (e *err) WithNotify(ctx context.Context, rgs registry.IRegistry) *err {
+	rgs.GetSentry().CaptureException(e)
+	// send notif
+	slackMessage := rgs.GetNotif().GetFormattedMessage(e.logCtx, ctx, e)
+	errSlack := rgs.GetNotif().Send(ctx, slackMessage)
+	if errSlack != nil {
+		logger.Error(ctx, "Error sending notif to slack", errSlack)
+	}
+
 	e.isNotify = true
 	return e
 }

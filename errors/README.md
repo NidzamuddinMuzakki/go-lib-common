@@ -210,19 +210,26 @@ func (h *userHttp) Delete(c *gin.Context) {
 
 ```go
     // userrepo.go
-    var (
-        logCtx = "reposiotry.GetUser"
-        ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
-    )
+    type userRepo struct {
+        commonRegistry  common.IRegistry
+        masterDb *sqlx.DB
+    }
 
-    sql, args, err := squirrel.ToSql()
-    if err != nil {
-        // will wrap error from squirrel.ToSql() with ErrSQLQueryBuilder
-        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder) // will return error to client and send notify to slack if error >= 500 
-        // OR
-        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithNotify() // will return error to client and force to send notify
-        // OR
-        return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithSuccessResp() // force return error to client
+    func (h *userRepo) Delete(c *gin.Context) {
+        var (
+            ErrSQLQueryBuilder = errors.New("error query builder") // use your own error builder package
+            ctx = context.Background()
+        )
+
+        err := e.masterDb.ExecContext(ctx, query, params...)
+        if err != nil {
+            // will wrap error from squirrel.ToSql() with ErrSQLQueryBuilder
+            return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder) // will return error to client and send notify to slack if error >= 500 
+            // OR
+            return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithNotify(ctx, commonRegistry) // will return error to client and force to send notify
+            // OR
+            return nil, 0, liberrors.WrapWithErr(err, ErrSQLQueryBuilder).WithSuccessResp() // force return error to client
+        }
     }
 
 ```
