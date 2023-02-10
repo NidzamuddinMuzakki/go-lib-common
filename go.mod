@@ -1,6 +1,6 @@
 module bitbucket.org/moladinTech/go-lib-common
 
-go 1.18
+go 1.20
 
 require (
 	github.com/getsentry/sentry-go v0.17.0

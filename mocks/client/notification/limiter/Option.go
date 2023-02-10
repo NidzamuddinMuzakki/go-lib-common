@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	panic_recovery "bitbucket.org/moladinTech/go-lib-common/middleware/gin/panic_recovery"
+	limiter "bitbucket.org/moladinTech/go-lib-common/client/notification/limiter"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,7 +13,7 @@ type Option struct {
 }
 
 // Execute provides a mock function with given fields: _a0
-func (_m *Option) Execute(_a0 *panic_recovery.MiddlewarePanicRecoveryPackage) {
+func (_m *Option) Execute(_a0 *limiter.SlackLimiter) {
 	_m.Called(_a0)
 }
 

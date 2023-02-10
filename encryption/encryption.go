@@ -2,36 +2,31 @@
 package encryption
 
 import (
-	"crypto/md5"
 	"fmt"
 
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
+
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/andreburgaud/crypt2go/ecb"
 	"github.com/andreburgaud/crypt2go/padding"
-	"golang.org/x/crypto/blowfish"
-
-	"bitbucket.org/moladinTech/go-lib-common/sentry"
-	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 	"github.com/go-playground/validator/v10"
+	"golang.org/x/crypto/blowfish"
 )
 
 type IEncryption interface {
 	GenerateSalt(key string) []byte
-	Encrypt(data string, salt []byte) []byte
+	Encrypt(data string, salt []byte) ([]byte, error)
+	Decrypt(data string, salt []byte) ([]byte, error)
 }
 
 type EncryptionPackage struct {
-	AppName string         `validate:"required"`
-	Sentry  sentry.ISentry `validate:"required"`
+	AppName string `validate:"required"`
 }
 
 func WithAppName(appName string) Option {
 	return func(s *EncryptionPackage) {
 		s.AppName = appName
-	}
-}
-func WithSentry(sentry sentry.ISentry) Option {
-	return func(s *EncryptionPackage) {
-		s.Sentry = sentry
 	}
 }
 
@@ -63,12 +58,12 @@ func (p *EncryptionPackage) GenerateSalt(key string) []byte {
 }
 
 // Encrypt the data using the salt
-func (p *EncryptionPackage) Encrypt(data string, salt []byte) []byte {
+func (p *EncryptionPackage) Encrypt(data string, salt []byte) ([]byte, error) {
 	// Create a new blowfish cipher
 	bytes := []byte(data)
 	block, err := blowfish.NewCipher(salt)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	// Pad the data
@@ -76,11 +71,38 @@ func (p *EncryptionPackage) Encrypt(data string, salt []byte) []byte {
 	padder := padding.NewPkcs5Padding()
 	bytes, err = padder.Pad(bytes)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	// Encrypt the data
 	ct := make([]byte, len(bytes))
 	mode.CryptBlocks(ct, bytes)
-	return ct
+	return ct, nil
+}
+
+func (p *EncryptionPackage) Decrypt(data string, salt []byte) ([]byte, error) {
+	ciphertext, err := hex.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new blowfish cipher
+	block, err := blowfish.NewCipher(salt)
+	if err != nil {
+		return nil, err
+	}
+
+	// Decrypt the data
+	mode := ecb.NewECBDecrypter(block)
+	pt := make([]byte, len(ciphertext))
+	mode.CryptBlocks(pt, ciphertext)
+
+	// Unpad the data
+	padder := padding.NewPkcs5Padding()
+	pt, err = padder.Unpad(pt)
+	if err != nil {
+		return nil, err
+	}
+
+	return pt, nil
 }
