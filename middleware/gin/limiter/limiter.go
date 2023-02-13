@@ -8,7 +8,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/cache"
 	"bitbucket.org/moladinTech/go-lib-common/cast"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
-	"bitbucket.org/moladinTech/go-lib-common/response"
+	responseModel "bitbucket.org/moladinTech/go-lib-common/response/model"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 
 	"github.com/gin-gonic/gin"
@@ -75,8 +75,8 @@ func NewLimiter(validator *validator.Validate, options ...Option) (*MiddlewareLi
 		}
 
 		if incr.Val() > int64(mlp.DefaultLimit) {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, response.Response{
-				Status:  response.StatusFail,
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, responseModel.Response{
+				Status:  responseModel.StatusFail,
 				Message: http.StatusText(http.StatusTooManyRequests),
 			})
 			return
@@ -105,11 +105,11 @@ func (a *MiddlewareLimitPackage) WithCustomLimit(rt RateLimit) gin.HandlerFunc {
 		)
 
 		if rt.TTL == nil {
-			rt.TTL = cast.NewPointer[uint](a.DefaultTTL)
+			rt.TTL = cast.NewPointer(a.DefaultTTL)
 		}
 
 		if rt.Limit == nil {
-			rt.Limit = cast.NewPointer[uint](a.DefaultLimit)
+			rt.Limit = cast.NewPointer(a.DefaultLimit)
 		}
 
 		incr, err := a.Cache.Incr(ctx, key)
@@ -125,8 +125,8 @@ func (a *MiddlewareLimitPackage) WithCustomLimit(rt RateLimit) gin.HandlerFunc {
 		}
 
 		if incr.Val() > int64(*rt.Limit) {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, response.Response{
-				Status:  response.StatusFail,
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, responseModel.Response{
+				Status:  responseModel.StatusFail,
 				Message: http.StatusText(http.StatusTooManyRequests),
 			})
 			return

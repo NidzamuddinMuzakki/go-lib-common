@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"bitbucket.org/moladinTech/go-lib-common/response"
+	responseModel "bitbucket.org/moladinTech/go-lib-common/response/model"
 	"github.com/pkg/errors"
 
 	"net/http"
@@ -27,40 +27,40 @@ type Response struct {
 var MapErrorResponse = map[error]Response{
 	ErrSQLQueryBuilder: {
 		StatusCode: http.StatusInternalServerError,
-		Response: response.Response{
+		Response: responseModel.Response{
 			Message: http.StatusText(http.StatusInternalServerError),
-			Status:  response.StatusFail,
+			Status:  responseModel.StatusFail,
 		},
 	},
 
 	ErrSQLExec: {
 		StatusCode: http.StatusInternalServerError,
-		Response: response.Response{
+		Response: responseModel.Response{
 			Message: "Database Server Failed to Execute, Please Try Again",
-			Status:  response.StatusFail,
+			Status:  responseModel.StatusFail,
 		},
 	},
 
 	ErrRequiredMessage: {
 		StatusCode: http.StatusBadRequest,
-		Response: response.Response{
+		Response: responseModel.Response{
 			Message: "Message Required",
-			Status:  response.StatusFail,
+			Status:  responseModel.StatusFail,
 		},
 	},
 
 	ErrMigrate: {
 		StatusCode: http.StatusInternalServerError,
-		Response: response.Response{
+		Response: responseModel.Response{
 			Message: "Failed When Migrating The Database",
-			Status:  response.StatusFail,
+			Status:  responseModel.StatusFail,
 		},
 	},
 
 	ErrorExporterNotSupportedType: {
 		StatusCode: http.StatusBadRequest,
-		Response: response.Response{
-			Status:  response.StatusError,
+		Response: responseModel.Response{
+			Status:  responseModel.StatusError,
 			Message: ErrorExporterNotSupportedType.Error(),
 		},
 	},

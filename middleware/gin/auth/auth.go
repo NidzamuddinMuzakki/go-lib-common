@@ -1,20 +1,21 @@
 package auth
 
 import (
-	"bitbucket.org/moladinTech/go-lib-activity-log/model"
-	moladinEvoClient "bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
-	"bitbucket.org/moladinTech/go-lib-common/constant"
-	"bitbucket.org/moladinTech/go-lib-common/response"
-	"bitbucket.org/moladinTech/go-lib-common/sentry"
-	"bitbucket.org/moladinTech/go-lib-common/signature"
-	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"net/http"
+
+	"bitbucket.org/moladinTech/go-lib-activity-log/model"
+	moladinEvoClient "bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
+	"bitbucket.org/moladinTech/go-lib-common/constant"
+	responseModel "bitbucket.org/moladinTech/go-lib-common/response/model"
+	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	"bitbucket.org/moladinTech/go-lib-common/signature"
+	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/exp/slices"
-	"net/http"
 )
 
 type IMiddlewareAuth interface {
@@ -107,12 +108,16 @@ func (a *MiddlewareAuthPackage) AuthToken() gin.HandlerFunc {
 		if token != "" {
 			user, err := a.MoladinEvoClient.UserDetail(c.Request.Context(), token)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: err.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+					Status: responseModel.StatusFail, Message: err.Error(),
+				})
 				return
 			}
 
 			if !slices.Contains(a.PermittedRoles, user.Role.Name) {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+					Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized),
+				})
 				return
 			}
 
@@ -121,7 +126,8 @@ func (a *MiddlewareAuthPackage) AuthToken() gin.HandlerFunc {
 			return
 		}
 
-		c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+			Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
 
 	}
 }
@@ -135,7 +141,8 @@ func (a *MiddlewareAuthPackage) AuthXApiKey() gin.HandlerFunc {
 
 		var apiKey = c.GetHeader(constant.XApiKeyHeader)
 		if apiKey != a.ConfigApiKey {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
 			return
 		}
 
@@ -154,9 +161,9 @@ func (a *MiddlewareAuthPackage) Auth() gin.HandlerFunc {
 		xApiKey := c.GetHeader(constant.XApiKeyHeader)
 		xServiceName := c.GetHeader(constant.XServiceNameHeader)
 		if xApiKey == "" && xServiceName == "" && authorizationToken == "" {
-			c.JSON(http.StatusUnauthorized, response.Response{
+			c.JSON(http.StatusUnauthorized, responseModel.Response{
 				Message: http.StatusText(http.StatusUnauthorized),
-				Status:  response.StatusFail,
+				Status:  responseModel.StatusFail,
 			})
 			c.Abort()
 			return
@@ -168,9 +175,9 @@ func (a *MiddlewareAuthPackage) Auth() gin.HandlerFunc {
 				user, err = a.MoladinEvoClient.UserDetail(c.Request.Context(), token)
 			)
 			if err != nil {
-				c.JSON(http.StatusUnauthorized, response.Response{
+				c.JSON(http.StatusUnauthorized, responseModel.Response{
 					Message: http.StatusText(http.StatusUnauthorized),
-					Status:  response.StatusFail,
+					Status:  responseModel.StatusFail,
 				})
 				c.Abort()
 				return
@@ -184,9 +191,9 @@ func (a *MiddlewareAuthPackage) Auth() gin.HandlerFunc {
 			token := []byte(xServiceName + xServiceName)
 			validateKey := sha256.Sum256(token)
 			if xApiKey != hex.EncodeToString(validateKey[:]) {
-				c.JSON(http.StatusUnauthorized, response.Response{
+				c.JSON(http.StatusUnauthorized, responseModel.Response{
 					Message: http.StatusText(http.StatusUnauthorized),
-					Status:  response.StatusFail,
+					Status:  responseModel.StatusFail,
 				})
 				c.Abort()
 				return
@@ -195,9 +202,9 @@ func (a *MiddlewareAuthPackage) Auth() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusUnauthorized, response.Response{
+		c.JSON(http.StatusUnauthorized, responseModel.Response{
 			Message: http.StatusText(http.StatusUnauthorized),
-			Status:  response.StatusFail,
+			Status:  responseModel.StatusFail,
 		})
 		c.Abort()
 	}
@@ -218,14 +225,16 @@ func (a *MiddlewareAuthPackage) AuthSignature() gin.HandlerFunc {
 		)
 
 		if serviceNameSender == "" || requestSignature == "" || requestID == "" || requestAt == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
 			return
 		}
 
 		key := serviceNameSender + ":" + a.ServiceName + ":" + requestID + ":" + requestAt + ":" + a.SecretKey
 		match := a.Signature.Verify(c.Request.Context(), key, requestSignature)
 		if !match {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Status: response.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
 			return
 		}
 

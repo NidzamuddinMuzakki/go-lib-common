@@ -80,6 +80,14 @@ func (e *err) Unwrap() error {
 	return e.original
 }
 
+func (e *err) GetLogCtx() string {
+	return e.logCtx
+}
+
+func (e *err) GetIsSuccessResp() bool {
+	return e.isSuccessResp
+}
+
 // will return the root cause and return itself if the type of struct isnt err type
 func RootErr(err_ error) error {
 	if val, ok := err_.(*err); ok {
@@ -161,4 +169,24 @@ func generateLogCtx(pc uintptr, file, rootDir string) string {
 	funcName = funcName[i+1:]
 
 	return fmt.Sprintf("%s.%s", filePath, funcName)
+}
+
+func ErrorMatcher(passedError error) (matchedError *err, isErrorMatch bool) {
+	matchedError, isErrorMatch = passedError.(*err)
+	return matchedError, isErrorMatch
+}
+
+type ParamIsSendNotif struct {
+	IsMapMatch   bool
+	ResponseMap  Response
+	IsErrorMatch bool
+	MatchedError *err
+}
+
+func IsCaptureErrorAndSendNotif(param ParamIsSendNotif) (isMatch bool) {
+	if !param.IsMapMatch || (param.IsMapMatch && param.ResponseMap.StatusCode >= 500) &&
+		!param.IsErrorMatch || param.IsErrorMatch && !param.MatchedError.isNotify {
+		isMatch = true
+	}
+	return isMatch
 }

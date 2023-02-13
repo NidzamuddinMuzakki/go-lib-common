@@ -11,7 +11,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
-	"bitbucket.org/moladinTech/go-lib-common/response"
+	responseModel "bitbucket.org/moladinTech/go-lib-common/response/model"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
 	"github.com/gin-gonic/gin"
@@ -115,8 +115,8 @@ func (p *MiddlewarePanicRecoveryPackage) PanicRecoveryMiddleware() gin.HandlerFu
 				}
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,
-					response.Response{
-						Status:  response.StatusFail,
+					responseModel.Response{
+						Status:  responseModel.StatusFail,
 						Message: responseMsg,
 					},
 				)
