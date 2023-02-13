@@ -75,7 +75,7 @@ func (p *MiddlewarePanicRecoveryPackage) sendSlack(
 	ctx = p.Sentry.SpanContext(*span)
 	defer p.Sentry.Finish(span)
 
-	slackMessage := p.Slack.GetFormattedMessage(logCtx, ctx, err)
+	slackMessage := p.Slack.GetFormattedMessage(ctx, logCtx, err)
 	errSlack := p.Slack.Send(ctx, slackMessage)
 	if errSlack != nil {
 		p.Sentry.CaptureException(errSlack)

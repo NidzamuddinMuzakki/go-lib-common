@@ -24,7 +24,7 @@ import (
 type ISlack interface {
 	Send(ctx context.Context, message string) error
 	Health(ctx context.Context) error
-	GetFormattedMessage(logCtx string, ctx context.Context, message any) string
+	GetFormattedMessage(ctx context.Context, logCtx string, message any) string
 }
 
 type SlackPackage struct {
@@ -207,7 +207,7 @@ func (c *SlackPackage) Send(ctx context.Context, message string) error {
 	return nil
 }
 
-func (c *SlackPackage) GetFormattedMessage(logCtx string, ctx context.Context, message any) string {
+func (c *SlackPackage) GetFormattedMessage(ctx context.Context, logCtx string, message any) string {
 	var (
 		span = c.Sentry.StartSpan(ctx, LogCtxName.ClientNotificationSlackGetFormattedMessage)
 	)

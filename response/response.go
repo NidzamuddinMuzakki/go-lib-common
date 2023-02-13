@@ -57,7 +57,7 @@ func HttpErrResp(ctx context.Context, p ParamHttpErrResp) {
 	if commonError.IsCaptureErrorAndSendNotif(SendNotifParam) {
 		rgs.GetSentry().CaptureException(e)
 		// send notif
-		slackMessage := rgs.GetNotif().GetFormattedMessage(logCtx, ctx, e)
+		slackMessage := rgs.GetNotif().GetFormattedMessage(ctx, logCtx, e)
 		errSlack := rgs.GetNotif().Send(ctx, slackMessage)
 		if errSlack != nil {
 			logger.Error(ctx, "Error sending notif to slack", errSlack)
@@ -119,7 +119,7 @@ func HttpResp(ctx context.Context, e error, p ParamHttpErrResp) *httpResp {
 	if commonError.IsCaptureErrorAndSendNotif(SendNotifParam) {
 		rgs.GetSentry().CaptureException(e)
 		// send notif
-		slackMessage := rgs.GetNotif().GetFormattedMessage(logCtx, ctx, e)
+		slackMessage := rgs.GetNotif().GetFormattedMessage(ctx, logCtx, e)
 		errSlack := rgs.GetNotif().Send(ctx, slackMessage)
 		if errSlack != nil {
 			logger.Error(ctx, "Error sending notif to slack", errSlack)

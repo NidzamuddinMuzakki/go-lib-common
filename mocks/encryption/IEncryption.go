@@ -10,7 +10,7 @@ type IEncryption struct {
 }
 
 // Decrypt provides a mock function with given fields: data, salt
-func (_m *IEncryption) Decrypt(data string, salt []byte) []byte {
+func (_m *IEncryption) Decrypt(data string, salt []byte) ([]byte, error) {
 	ret := _m.Called(data, salt)
 
 	var r0 []byte
@@ -22,11 +22,18 @@ func (_m *IEncryption) Decrypt(data string, salt []byte) []byte {
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, []byte) error); ok {
+		r1 = rf(data, salt)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Encrypt provides a mock function with given fields: data, salt
-func (_m *IEncryption) Encrypt(data string, salt []byte) []byte {
+func (_m *IEncryption) Encrypt(data string, salt []byte) ([]byte, error) {
 	ret := _m.Called(data, salt)
 
 	var r0 []byte
@@ -38,7 +45,14 @@ func (_m *IEncryption) Encrypt(data string, salt []byte) []byte {
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, []byte) error); ok {
+		r1 = rf(data, salt)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GenerateSalt provides a mock function with given fields: key

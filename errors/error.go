@@ -30,7 +30,7 @@ func (e *err) StackTrace() []uintptr {
 func (e *err) WithNotify(ctx context.Context, rgs registry.IRegistry) *err {
 	rgs.GetSentry().CaptureException(e)
 	// send notif
-	slackMessage := rgs.GetNotif().GetFormattedMessage(e.logCtx, ctx, e)
+	slackMessage := rgs.GetNotif().GetFormattedMessage(ctx, e.logCtx, e)
 	errSlack := rgs.GetNotif().Send(ctx, slackMessage)
 	if errSlack != nil {
 		logger.Error(ctx, "Error sending notif to slack", errSlack)
