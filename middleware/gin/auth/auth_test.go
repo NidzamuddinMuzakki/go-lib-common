@@ -1,7 +1,6 @@
 package auth_test
 
 import (
-	"bitbucket.org/moladinTech/go-lib-common/signature"
 	"context"
 	"errors"
 	"io/ioutil"
@@ -10,12 +9,15 @@ import (
 	"testing"
 
 	"bitbucket.org/moladinTech/go-lib-activity-log/model"
+	"bitbucket.org/moladinTech/go-lib-common/cast"
 	moladinEvoMock "bitbucket.org/moladinTech/go-lib-common/client/moladin_evo/mocks"
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
 	sentryMock "bitbucket.org/moladinTech/go-lib-common/sentry/mocks"
+	"bitbucket.org/moladinTech/go-lib-common/signature"
 	signatureMock "bitbucket.org/moladinTech/go-lib-common/signature/mocks"
 	"bitbucket.org/moladinTech/go-lib-common/validator"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
@@ -345,6 +347,59 @@ func TestAuthSignature_ShouldSucceedOnMatchingSignature(t *testing.T) {
 		responseData, _ := ioutil.ReadAll(w.Body)
 		require.Equal(t, mockResponse, string(responseData))
 		require.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+func TestAuthSignature_ErrorOnExpirationValidation(t *testing.T) {
+	t.Run("Error on expiration validation", func(t *testing.T) {
+		span := sentry.Span{}
+		sentry := sentryMock.NewISentry(t)
+		sentry.On("StartSpan", mock.Anything, mock.Anything).
+			Return(&span).
+			Once()
+
+		key := "service-sender:service-received:b3590f68-3d79-4ae5-8dfc-fd08b10c4e14:1676285674:secretbanget"
+		s, err := signature.NewSignature(
+			signature.WithAlgorithm(signature.BCrypt),
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		ctx := context.TODO()
+		hashed, err := s.Generate(ctx,
+			key)
+		if err != nil {
+			panic(err)
+		}
+
+		auth := auth.NewAuth(validator.New(),
+			auth.WithSentry(sentry),
+			auth.WithSignature(s),
+			auth.WithSignatureExpirationTime(cast.NewPointer[uint](1)),
+			auth.WithServiceName("service-received"),
+			auth.WithSecretKey("secretbanget"),
+		)
+		require.NotNil(t, auth)
+
+		mockResponse := `{"status":"fail","message":"Unauthorized"}`
+
+		gin.SetMode(gin.TestMode)
+		r := gin.Default()
+		r.GET("/", auth.AuthSignature())
+
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header = http.Header{}
+		req.Header.Set(constant.XRequestSignatureHeader, hashed)
+		req.Header.Set(constant.XServiceNameHeader, "service-sender")
+		req.Header.Set(constant.XRequestIdHeader, "b3590f68-3d79-4ae5-8dfc-fd08b10c4e14")
+		req.Header.Set(constant.XRequestAtHeader, "1676285674")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		responseData, _ := ioutil.ReadAll(w.Body)
+		require.Equal(t, mockResponse, string(responseData))
+		require.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 }
 

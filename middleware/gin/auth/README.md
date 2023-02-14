@@ -25,12 +25,23 @@ if xApiKey != hex.EncodeToString(validateKey[:]) {
 
 ## Using Package
 ```go
+    s, err := signature.NewSignature(
+        signature.WithAlgorithm(signature.BCrypt),
+    )
+    if err != nil {
+        panic(err)
+    }
+
     auth := NewAuth(
         validator.New(), // is required field | import from go-lib-common/validator
         WithSentry(sentry), // is required field | import from go-lib-common/sentry
         WithMoladinEvoClient(moladinEvo), // is required field | import from go-lib-common/client/moladin_evo
-        WithConfigApiKey(url) // is option field | used for the AuthXApiKey function
-        WithPermittedRoles(channel) // is optional field | used for AuthToken and Auth functions | roles that are in moladin evo to be permitted
+        WithConfigApiKey(url), // is option field | used for the AuthXApiKey function
+        WithPermittedRoles(channel), // is optional field | used for AuthToken and Auth functions | roles that are in moladin evo to be permitted
+        WithSignature(s),
+        WithSignatureExpirationTime(config.Hot.ExpirationTimeInHours),
+        WithServiceName("service-name"),
+		WithSecretKey("secret-key"),
     )
 ```
 

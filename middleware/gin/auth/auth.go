@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"strconv"
+	"time"
 
 	"bitbucket.org/moladinTech/go-lib-activity-log/model"
 	moladinEvoClient "bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
@@ -13,6 +15,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	"bitbucket.org/moladinTech/go-lib-common/signature"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/exp/slices"
@@ -26,13 +29,14 @@ type IMiddlewareAuth interface {
 }
 
 type MiddlewareAuthPackage struct {
-	Sentry           sentry.ISentry `validate:"required"`
-	MoladinEvoClient moladinEvoClient.IMoladinEvo
-	Signature        signature.GenerateAndVerify
-	ConfigApiKey     string
-	PermittedRoles   []string
-	ServiceName      string
-	SecretKey        string
+	Sentry                  sentry.ISentry `validate:"required"`
+	MoladinEvoClient        moladinEvoClient.IMoladinEvo
+	Signature               signature.GenerateAndVerify
+	SignatureExpirationTime *uint
+	ConfigApiKey            string
+	PermittedRoles          []string
+	ServiceName             string
+	SecretKey               string
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -50,6 +54,12 @@ func WithMoladinEvoClient(moladinEvoClient moladinEvoClient.IMoladinEvo) Option 
 func WithSignature(signature signature.GenerateAndVerify) Option {
 	return func(s *MiddlewareAuthPackage) {
 		s.Signature = signature
+	}
+}
+
+func WithSignatureExpirationTime(signatureExpirationTime *uint) Option {
+	return func(s *MiddlewareAuthPackage) {
+		s.SignatureExpirationTime = signatureExpirationTime
 	}
 }
 
@@ -228,6 +238,17 @@ func (a *MiddlewareAuthPackage) AuthSignature() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
 				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
 			return
+		}
+
+		if a.SignatureExpirationTime != nil {
+			requestAtUnix, _ := strconv.ParseInt(requestAt, 10, 64)
+			requestAtUnix += int64((time.Hour * time.Duration(*a.SignatureExpirationTime)).Seconds())
+			tnUnix := time.Now().Unix()
+			if tnUnix > requestAtUnix {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+					Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+				return
+			}
 		}
 
 		key := serviceNameSender + ":" + a.ServiceName + ":" + requestID + ":" + requestAt + ":" + a.SecretKey
