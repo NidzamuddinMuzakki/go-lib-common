@@ -1,0 +1,7 @@
+{
+    "title": "test bindFromFile",
+    "description": "testing function BindFromFile from config.go",
+    "paramNumber": 1,
+    "paramBool": true,
+    "paramFloat": 5.14
+}
