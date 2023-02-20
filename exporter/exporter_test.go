@@ -6,7 +6,9 @@ package exporter_test
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -39,6 +41,16 @@ type TestStruct struct {
 	When *commonTime.DateTime `exporter:"When"`
 }
 
+func (t TestStruct) GenerateConverter() exporter.MapFuncConvert {
+	mapFuncConvert := make(exporter.MapFuncConvert)
+	mapFuncConvert.Add("When", func(v interface{}) string {
+		time_ := (time.Time)(v.(commonTime.DateTime))
+		return time_.Format(time.Kitchen)
+	})
+
+	return mapFuncConvert
+}
+
 func (e *ExporterSuite) SetupTest() {
 	e.mock.sentry = commonSentryMock.NewISentry(e.T())
 	e.Exporter = exporter.Newexporter(
@@ -46,6 +58,24 @@ func (e *ExporterSuite) SetupTest() {
 		exporter.WithSentry(e.mock.sentry),
 		exporter.WithExporterType(exporter.ExcelType),
 		exporter.AddConverter(TestStruct{}, make(map[string]exporter.FuncConvert)))
+}
+
+func (e *ExporterSuite) SetupTestCSV() {
+	e.mock.sentry = commonSentryMock.NewISentry(e.T())
+	e.Exporter = exporter.Newexporter(
+		validator.New(),
+		exporter.WithSentry(e.mock.sentry),
+		exporter.WithExporterType(exporter.CSVType),
+		exporter.AddConverter(TestStruct{}, make(map[string]exporter.FuncConvert)))
+}
+
+func (e *ExporterSuite) SetupTestCSVUsingConverter() {
+	e.mock.sentry = commonSentryMock.NewISentry(e.T())
+	e.Exporter = exporter.Newexporter(
+		validator.New(),
+		exporter.WithSentry(e.mock.sentry),
+		exporter.WithExporterType(exporter.CSVType),
+		exporter.AddConverter(TestStruct{}, TestStruct{}.GenerateConverter()))
 }
 
 func mockingSentryConf(mock_ *commonSentryMock.ISentry, ctx interface{}, logCtx string, returnContext context.Context, callSpan bool, callFinish bool) {
@@ -66,7 +96,7 @@ func mockingSentryConf(mock_ *commonSentryMock.ISentry, ctx interface{}, logCtx 
 
 }
 
-func (e *ExporterSuite) TestExport() {
+func (e *ExporterSuite) TestExportExcel() {
 	type (
 		args struct {
 			ctx context.Context
@@ -151,6 +181,193 @@ func (e *ExporterSuite) TestExport() {
 			}
 
 			assert.Equal(e.T(), ExcelExp.XLSX, excelRes.XLSX)
+
+		})
+	}
+}
+func (e *ExporterSuite) TestExportCSV() {
+	type (
+		args struct {
+			ctx context.Context
+			v   interface{}
+		}
+
+		funcMock func(a args)
+
+		output struct {
+			err  error
+			file [][]string
+		}
+
+		testCase struct {
+			args
+			funcMock
+			output
+			description string
+			no          int
+		}
+	)
+
+	testCases := []testCase{
+		{
+			args: args{
+				ctx: context.Background(),
+				v: []TestStruct{
+					{
+						Name: "Test Name",
+						When: cast.NewPointer(commonTime.DateTime(time.Date(2022, 3, 28, 9, 0, 0, 0, time.UTC))),
+					},
+				},
+			},
+			funcMock: func(a args) {
+				mockingSentryConf(e.mock.sentry, a.ctx, "common.exporter.Export."+"CSV", context.Background(), true, true)
+			},
+			output: output{
+				err: nil,
+				file: [][]string{
+					{"Name", "When"},
+					{"\"Test Name\"", "2022-03-28 09:00:00"},
+				},
+			},
+			description: "should success",
+			no:          1,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				v: []*TestStruct{
+					{
+						Name: "Test Name",
+						When: cast.NewPointer(commonTime.DateTime(time.Date(2022, 3, 28, 9, 0, 0, 0, time.UTC))),
+					},
+				},
+			},
+			funcMock: func(a args) {
+				mockingSentryConf(e.mock.sentry, a.ctx, "common.exporter.Export."+"CSV", context.Background(), true, true)
+			},
+			output: output{
+				err: nil,
+				file: [][]string{
+					{"Name", "When"},
+					{"\"Test Name\"", "2022-03-28 09:00:00"},
+				},
+			},
+			description: "should success with pointer struct",
+			no:          2,
+		},
+	}
+
+	for _, testCase_ := range testCases {
+		e.Run(fmt.Sprintf("%d %s", testCase_.no, testCase_.description), func() {
+			e.SetupTestCSV()
+			testCase_.funcMock(testCase_.args)
+
+			res, err := e.Exporter.Export(testCase_.ctx, testCase_.v)
+
+			assert.Equal(e.T(), testCase_.err, commonError.GetErrKey(err))
+
+			// read csv values using csv.Reader
+			csvReader := csv.NewReader(bytes.NewReader(res.CSVRaw))
+			data, err := csvReader.ReadAll()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			e.EqualValues(testCase_.output.file, data)
+
+		})
+	}
+}
+
+func (e *ExporterSuite) TestExportUsingConverter() {
+	type (
+		args struct {
+			ctx context.Context
+			v   interface{}
+		}
+
+		funcMock func(a args)
+
+		output struct {
+			err  error
+			file [][]string
+		}
+
+		testCase struct {
+			args
+			funcMock
+			output
+			description string
+			no          int
+		}
+	)
+
+	testCases := []testCase{
+		{
+			args: args{
+				ctx: context.Background(),
+				v: []TestStruct{
+					{
+						Name: "Test Name",
+						When: cast.NewPointer(commonTime.DateTime(time.Date(2022, 3, 28, 9, 0, 0, 0, time.UTC))),
+					},
+				},
+			},
+			funcMock: func(a args) {
+				mockingSentryConf(e.mock.sentry, a.ctx, "common.exporter.Export."+"CSV", context.Background(), true, true)
+			},
+			output: output{
+				err: nil,
+				file: [][]string{
+					{"Name", "When"},
+					{"\"Test Name\"", "9:00AM"},
+				},
+			},
+			description: "should success",
+			no:          1,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				v: []*TestStruct{
+					{
+						Name: "Test Name",
+						When: cast.NewPointer(commonTime.DateTime(time.Date(2022, 3, 28, 9, 0, 0, 0, time.UTC))),
+					},
+				},
+			},
+			funcMock: func(a args) {
+				mockingSentryConf(e.mock.sentry, a.ctx, "common.exporter.Export."+"CSV", context.Background(), true, true)
+			},
+			output: output{
+				err: nil,
+				file: [][]string{
+					{"Name", "When"},
+					{"\"Test Name\"", "9:00AM"},
+				},
+			},
+			description: "should success with pointer struct",
+			no:          2,
+		},
+	}
+
+	for _, testCase_ := range testCases {
+		e.Run(fmt.Sprintf("%d %s", testCase_.no, testCase_.description), func() {
+			e.SetupTestCSVUsingConverter()
+			testCase_.funcMock(testCase_.args)
+
+			res, err := e.Exporter.Export(testCase_.ctx, testCase_.v)
+
+			assert.Equal(e.T(), testCase_.err, commonError.GetErrKey(err))
+
+			// read csv values using csv.Reader
+			csvReader := csv.NewReader(bytes.NewReader(res.CSVRaw))
+			data, err := csvReader.ReadAll()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			e.EqualValues(testCase_.output.file, data)
 
 		})
 	}

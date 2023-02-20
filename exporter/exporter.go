@@ -2,7 +2,9 @@
 package exporter
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"fmt"
 
 	"reflect"
@@ -19,8 +21,13 @@ import (
 
 const (
 	ExcelType = "EXCEL"
+	CSVType   = "CSV"
 
 	TagExporter = "exporter"
+
+	CSVDelimiter = ","
+
+	DefaultTimeFormat = "2006-01-02 15:04:05"
 )
 
 type ExportType string
@@ -40,6 +47,7 @@ func (m *MapFuncConvert) Add(tagName string, func_ FuncConvert) {
 type ResultExport struct {
 	ExcelObj *excelize.File
 	ExcelRaw []byte
+	CSVRaw   []byte
 }
 
 type exporter struct {
@@ -150,6 +158,106 @@ func incrColumnAndRow(col *int, row int) string {
 	return fmt.Sprintf("%s%d", excelize.ToAlphaString(*col), row)
 }
 
+type exporterCSV map[string]map[string]FuncConvert
+
+func (e *exporterCSV) Export(ctx context.Context, v interface{}) (ResultExport, error) {
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Slice:
+		s := reflect.ValueOf(v)
+
+		// create new csv writer
+		var buffer bytes.Buffer
+		writer := csv.NewWriter(&buffer)
+
+		structElem := s.Type().Elem()
+		if structElem.Kind() == reflect.Pointer {
+			structElem = structElem.Elem()
+		}
+		structName := structElem.Name()
+
+		// set header
+		header := e.ExtractHeader(reflect.New(structElem).Elem())
+		lengthRow := len(header)
+		writer.Write(header)
+
+		//get converter map function
+		convFunc := (*e)[structName]
+
+		for i := 0; i < s.Len(); i++ {
+			t := s.Index(i)
+			if t.Type().Kind() == reflect.Pointer {
+				t = t.Elem()
+			}
+			writer.Write(e.ExtractRow(t, lengthRow, convFunc))
+		}
+
+		return e.ReturnResult(writer, &buffer)
+	}
+
+	return ResultExport{}, commonError.ErrorExporterNotSupportedType
+}
+
+func (e *exporterCSV) ExtractRow(t reflect.Value, length int, convFunc map[string]FuncConvert) []string {
+	row := make([]string, 0, length)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Type().Field(i)
+		tag := field.Tag.Get(TagExporter)
+
+		if len(tag) > 0 && tag != "-" {
+
+			type_ := t.Field(i)              // get field[idx] on the struct
+			if type_.Kind() == reflect.Ptr { // if pointer then get the pointed element
+				if !type_.IsNil() {
+					type_ = type_.Elem()
+				}
+			}
+
+			interface_ := type_.Interface()
+
+			// call preprocessing function
+			if func_, ok := convFunc[tag]; ok {
+				row = append(row, func_(interface_))
+				continue
+			}
+
+			// for type casted
+			switch interface_ := interface_.(type) {
+			case commonTime.DateTime:
+				row = append(row, time.Time(interface_).Format(DefaultTimeFormat))
+			case string:
+				row = append(row, fmt.Sprintf("\"%s\"", interface_))
+			case time.Time:
+				row = append(row, interface_.Format(DefaultTimeFormat))
+			default:
+				row = append(row, fmt.Sprint(interface_))
+			}
+		}
+	}
+	return row
+}
+
+func (e *exporterCSV) ExtractHeader(t reflect.Value) []string {
+	row := make([]string, 0)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Type().Field(i)
+		tag := field.Tag.Get(TagExporter)
+
+		if len(tag) > 0 && tag != "-" {
+			row = append(row, tag)
+		}
+	}
+
+	return row
+}
+
+func (e *exporterCSV) ReturnResult(writer *csv.Writer, buffer *bytes.Buffer) (ResultExport, error) {
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return ResultExport{}, err
+	}
+	return ResultExport{CSVRaw: buffer.Bytes()}, nil
+}
+
 type Option func(*exporter)
 
 func AddConverter(strct interface{}, funcConv map[string]FuncConvert) Option {
@@ -196,6 +304,9 @@ func Newexporter(
 	switch exporter.exporterType {
 	case ExcelType:
 		ex := exporterExcel(exporter.converter)
+		exporter.Exporter = &ex
+	case CSVType:
+		ex := exporterCSV(exporter.converter)
 		exporter.Exporter = &ex
 	default:
 		panic(`invalid exporter type`)
