@@ -8,6 +8,7 @@ import (
 )
 
 func Test_Destination(t *testing.T) {
+	t.Parallel()
 	statement := commonDataSource.NewStatement(
 		nil,
 		"select * from table1 where id = $1",
@@ -24,6 +25,7 @@ func Test_Destination(t *testing.T) {
 }
 
 func Test_Query(t *testing.T) {
+	t.Parallel()
 	statement := commonDataSource.NewStatement(
 		nil,
 		"select * from table1 where id = $1",
@@ -40,6 +42,7 @@ func Test_Query(t *testing.T) {
 }
 
 func Test_Args(t *testing.T) {
+	t.Parallel()
 	statement := commonDataSource.NewStatement(
 		nil,
 		"select * from table1 where id = $1",

@@ -141,5 +141,6 @@ func AnotherWrapFunc(t *testing.T, err error) error {
 }
 
 func TestSuiteErrorPackage(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(TestErrorSuite))
 }

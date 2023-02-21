@@ -11,6 +11,8 @@ import (
 )
 
 func TestNewTime_ShouldSucceedWithNow(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed New Time", func(t *testing.T) {
 		commonTime.LoadTimeZoneFromEnv()
 		tm := commonTime.InitTime()
@@ -21,6 +23,8 @@ func TestNewTime_ShouldSucceedWithNow(t *testing.T) {
 }
 
 func TestNewTime_ShouldSucceedWithToDateTime(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed New Time", func(t *testing.T) {
 		commonTime.LoadTimeZoneFromEnv()
 		tm := commonTime.InitTime()
@@ -30,6 +34,8 @@ func TestNewTime_ShouldSucceedWithToDateTime(t *testing.T) {
 }
 
 func Test_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
 	var dateTime = struct {
 		CommonTime commonTime.DateTime `json:"time"`
 	}{}
@@ -43,6 +49,8 @@ func Test_UnmarshalJSON(t *testing.T) {
 }
 
 func Test_GetValue(t *testing.T) {
+	t.Parallel()
+
 	timeNow := time.Now()
 	dateTime := commonTime.GetValue(&timeNow, commonTime.LoadTimeZoneAsiaJakarta())
 

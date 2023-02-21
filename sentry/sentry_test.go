@@ -17,6 +17,8 @@ import (
 )
 
 func TestNewSentry_ShouldSucceedWithValidation(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed New Sentry", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)
@@ -34,6 +36,8 @@ func TestNewSentry_ShouldSucceedWithValidation(t *testing.T) {
 }
 
 func TestSetStartTransaction_ShouldSucceedWithTrace(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed SetStartTransaction", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)
@@ -67,6 +71,8 @@ func TestSetStartTransaction_ShouldSucceedWithTrace(t *testing.T) {
 }
 
 func TestSetStartTransaction_ShouldSucceedWithTraceManual(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed SetStartTransaction", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)
@@ -99,6 +105,8 @@ func TestSetStartTransaction_ShouldSucceedWithTraceManual(t *testing.T) {
 }
 
 func TestSetStartTransaction_ShouldSucceedWithTraceAndTag(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed SetStartTransaction", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)
@@ -132,6 +140,8 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndTag(t *testing.T) {
 }
 
 func TestSetStartTransaction_ShouldSucceedWithTraceAndUserInfo(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed SetStartTransaction", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)
@@ -169,6 +179,8 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndUserInfo(t *testing.T) {
 }
 
 func TestSetStartTransaction_ShouldSucceedWithTraceAndCaptureException(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed SetStartTransaction", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)
@@ -202,6 +214,8 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndCaptureException(t *testin
 }
 
 func TestSetStartTransaction_ShouldSucceedWithTraceAndHandlingPanic(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed SetStartTransaction", func(t *testing.T) {
 		err := godotenv.Load("../.env.test")
 		require.NoError(t, err)

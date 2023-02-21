@@ -8,6 +8,7 @@ import (
 )
 
 func Test_GetDSN(t *testing.T) {
+	t.Parallel()
 
 	type (
 		args struct {
@@ -71,6 +72,7 @@ func Test_GetDSN(t *testing.T) {
 }
 
 func Test_GetDbColumnsAndValue(t *testing.T) {
+	t.Parallel()
 	var dummyTableAndValue = struct {
 		FirstName   string `db:"firstName"`
 		LastName    string `db:"lastName"`
@@ -128,6 +130,7 @@ func Test_GetDbColumnsAndValue(t *testing.T) {
 }
 
 func Test_GetDbColumns(t *testing.T) {
+	t.Parallel()
 	var dummyTableAndValue = struct {
 		FirstName   string `db:"firstName"`
 		LastName    string `db:"lastName"`

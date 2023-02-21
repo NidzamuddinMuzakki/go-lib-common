@@ -36,6 +36,7 @@ func generateTestKeyAndVal() ([]Data, []Key) {
 }
 
 func TestCache(t *testing.T) {
+	t.Parallel()
 	redis, err := NewCache(WithHost("localhost:6379"), WithDatabase("0"), WithDriver(RedisDriver), WithPassword(""))
 	if err != nil {
 		t.Fatal(err)

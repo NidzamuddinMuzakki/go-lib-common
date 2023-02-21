@@ -9,6 +9,7 @@ import (
 )
 
 func Test_AddLoggingTag(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, commonLogger.LoggingTagKey, "tag wrapper")
 
@@ -26,6 +27,7 @@ func Test_AddLoggingTag(t *testing.T) {
 }
 
 func Test_AddRequestID(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	newCtx := commonLogger.AddRequestID(
 		ctx,
@@ -43,6 +45,7 @@ func Test_AddRequestID(t *testing.T) {
 }
 
 func Test_GetAllLoggingTagInTagStr(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	newCtx := commonLogger.AddRequestID(
 		ctx,

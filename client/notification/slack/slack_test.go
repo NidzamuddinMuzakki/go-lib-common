@@ -13,6 +13,7 @@ import (
 )
 
 func TestNewSlack_ShouldSucceedWithValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed New Slack", func(t *testing.T) {
 		dummy := "dummy"
 		mockSentry := sentryMock.NewISentry(t)
@@ -31,6 +32,7 @@ func TestNewSlack_ShouldSucceedWithValidation(t *testing.T) {
 }
 
 func TestNewSlack_ErrorOnValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Validation New Slack", func(t *testing.T) {
 		dummy := "dummy"
 		mockSentry := sentryMock.NewISentry(t)
@@ -49,6 +51,7 @@ func TestNewSlack_ErrorOnValidation(t *testing.T) {
 }
 
 func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Client Get Url", func(t *testing.T) {
 		mockSentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
@@ -72,6 +75,7 @@ func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 }
 
 func TestSend_ErrorOnClientPostMessage(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Client Post Message", func(t *testing.T) {
 		span := sentry.Span{}
 		mockSentry := sentryMock.NewISentry(t)

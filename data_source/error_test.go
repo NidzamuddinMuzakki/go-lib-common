@@ -9,6 +9,7 @@ import (
 )
 
 func Test_IsErrDuplicateKey(t *testing.T) {
+	t.Parallel()
 	type (
 		args struct {
 			err error

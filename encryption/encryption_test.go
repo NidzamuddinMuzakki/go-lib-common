@@ -8,10 +8,12 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/validator"
 
 	"encoding/hex"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateSalt_ShouldSucceed(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed Generate Salt", func(t *testing.T) {
 		encPkg := encryption.NewEncryption(
 			validator.New(),
@@ -23,6 +25,7 @@ func TestGenerateSalt_ShouldSucceed(t *testing.T) {
 }
 
 func TestNewEncryption_ErrorOnValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Validation New Encryption", func(t *testing.T) {
 		require.Panics(t, func() {
 			encryption.NewEncryption(
@@ -33,6 +36,7 @@ func TestNewEncryption_ErrorOnValidation(t *testing.T) {
 }
 
 func TestEncrypt_ShouldSucceed(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed Encryption", func(t *testing.T) {
 		encPkg := encryption.NewEncryption(
 			validator.New(),
@@ -46,6 +50,7 @@ func TestEncrypt_ShouldSucceed(t *testing.T) {
 }
 
 func TestDecrypt_ShouldSucceed(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed Decryption", func(t *testing.T) {
 		encPkg := encryption.NewEncryption(
 			validator.New(),

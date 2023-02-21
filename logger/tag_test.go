@@ -10,6 +10,7 @@ import (
 )
 
 func Test_Err(t *testing.T) {
+	t.Parallel()
 	err := errors.New("error tag")
 	errTag := commonLogger.Err(err)
 

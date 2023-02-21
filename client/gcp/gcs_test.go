@@ -13,6 +13,7 @@ import (
 )
 
 func TestNewGCSCLient_ShouldSucceedWithValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed New GCS", func(t *testing.T) {
 		sentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
@@ -42,6 +43,7 @@ func TestNewGCSCLient_ShouldSucceedWithValidation(t *testing.T) {
 }
 
 func TestNewGCS_ErrorOnValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Validation New GCS", func(t *testing.T) {
 		sentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
@@ -70,6 +72,7 @@ func TestNewGCS_ErrorOnValidation(t *testing.T) {
 }
 
 func TestUploadFileInByte_ErrorOnSendPutObjectRequest(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed UploadFileInByte GCS", func(t *testing.T) {
 		span := sentry.Span{}
 		sentry := sentryMock.NewISentry(t)

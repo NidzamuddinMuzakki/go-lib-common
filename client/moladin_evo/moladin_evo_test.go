@@ -13,6 +13,7 @@ import (
 )
 
 func TestNewMoladinEvo_ShouldSucceedWithValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed New MoladinEvo", func(t *testing.T) {
 		dummy := "dummy"
 		mockSentry := sentryMock.NewISentry(t)
@@ -27,6 +28,7 @@ func TestNewMoladinEvo_ShouldSucceedWithValidation(t *testing.T) {
 }
 
 func TestNewMoladinEvo_ErrorOnValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Validation New Moladin Evo", func(t *testing.T) {
 		dummy := "dummy"
 		mockSentry := sentryMock.NewISentry(t)
@@ -41,6 +43,7 @@ func TestNewMoladinEvo_ErrorOnValidation(t *testing.T) {
 }
 
 func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Client Get Url", func(t *testing.T) {
 		mockSentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
@@ -60,6 +63,7 @@ func TestHealth_ErrorOnClientGetUrl(t *testing.T) {
 }
 
 func TestUserDetail_ErrorOnClientGetUrlUser(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Client Get Url User", func(t *testing.T) {
 		span := sentry.Span{}
 		mockSentry := sentryMock.NewISentry(t)

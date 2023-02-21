@@ -9,6 +9,7 @@ import (
 )
 
 func Test_BindFromFile(t *testing.T) {
+	t.Parallel()
 
 	type (
 		fileTest struct {

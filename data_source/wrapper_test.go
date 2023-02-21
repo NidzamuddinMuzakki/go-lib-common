@@ -12,6 +12,7 @@ import (
 )
 
 func Test_Exec(t *testing.T) {
+	t.Parallel()
 	type (
 		args struct {
 			ctx  context.Context
@@ -128,6 +129,7 @@ func Test_Exec(t *testing.T) {
 }
 
 func Test_ExecTx(t *testing.T) {
+	t.Parallel()
 	type (
 		args struct {
 			ctx  context.Context

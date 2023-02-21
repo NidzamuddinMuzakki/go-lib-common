@@ -17,6 +17,8 @@ type Person struct {
 }
 
 func TestNewValidator_ShouldSucceedToError(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Should Succeed New Validator", func(t *testing.T) {
 		vld := validator.New()
 		err := vld.Struct(Person{Weight: "500", Url: "url", Height: 400})

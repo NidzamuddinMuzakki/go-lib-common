@@ -13,6 +13,7 @@ import (
 )
 
 func TestNewS3_ShouldSucceedWithValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed New S3", func(t *testing.T) {
 		sentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
@@ -33,6 +34,7 @@ func TestNewS3_ShouldSucceedWithValidation(t *testing.T) {
 }
 
 func TestNewS3_ErrorOnValidation(t *testing.T) {
+	t.Parallel()
 	t.Run("Error On Validation New S3", func(t *testing.T) {
 		sentry := sentryMock.NewISentry(t)
 		dummy := "dummy"
@@ -53,6 +55,7 @@ func TestNewS3_ErrorOnValidation(t *testing.T) {
 }
 
 func TestUploadFileInByte_ErrorOnSendPutObjectRequest(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed UploadFileInByte S3", func(t *testing.T) {
 		span := sentry.Span{}
 		sentry := sentryMock.NewISentry(t)

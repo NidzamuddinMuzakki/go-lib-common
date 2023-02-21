@@ -15,6 +15,7 @@ import (
 )
 
 func Test_NewContextFromParent(t *testing.T) {
+	t.Parallel()
 	httpRecorder := httptest.NewRecorder()
 	ginCtx, _ := gin.CreateTestContext(httpRecorder)
 	ginCtx.Request = &http.Request{

@@ -12,6 +12,7 @@ import (
 )
 
 func Test_NewTransactionRunner(t *testing.T) {
+	t.Parallel()
 	dbmock, _, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.Nil(t, err)
 
@@ -21,6 +22,7 @@ func Test_NewTransactionRunner(t *testing.T) {
 }
 
 func Test_WithTx(t *testing.T) {
+	t.Parallel()
 	dbmock, queryMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.Nil(t, err)
 
@@ -39,6 +41,7 @@ func Test_WithTx(t *testing.T) {
 }
 
 func Test_FailedWithTx(t *testing.T) {
+	t.Parallel()
 	dbmock, queryMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.Nil(t, err)
 
@@ -57,6 +60,7 @@ func Test_FailedWithTx(t *testing.T) {
 }
 
 func Test_StartTx(t *testing.T) {
+	t.Parallel()
 	dbmock, queryMock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.Nil(t, err)
 

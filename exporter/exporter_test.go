@@ -374,5 +374,6 @@ func (e *ExporterSuite) TestExportUsingConverter() {
 }
 
 func TestExporter(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ExporterSuite))
 }

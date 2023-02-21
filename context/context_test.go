@@ -10,6 +10,7 @@ import (
 )
 
 func TestContext_ShouldSucceed(t *testing.T) {
+	t.Parallel()
 	t.Run("Should Succeed Context", func(t *testing.T) {
 		key := "myKey"
 		val := "myValue"
@@ -20,6 +21,7 @@ func TestContext_ShouldSucceed(t *testing.T) {
 }
 
 func TestContext_ErrorOnTypeValue(t *testing.T) {
+	t.Parallel()
 	t.Run("Error on type value", func(t *testing.T) {
 		key := "myKey"
 		val := 1

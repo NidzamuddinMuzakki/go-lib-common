@@ -291,5 +291,6 @@ func (suite *SlicesTestSuite) TestLast() {
 }
 
 func TestSlicesTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(SlicesTestSuite))
 }

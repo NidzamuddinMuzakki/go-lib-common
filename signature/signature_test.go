@@ -8,6 +8,8 @@ import (
 )
 
 func TestSignature(t *testing.T) {
+	t.Parallel()
+
 	sha256, err := NewSignature(WithAlgorithm(Sha256))
 	if err != nil {
 		t.Fatal(err)
