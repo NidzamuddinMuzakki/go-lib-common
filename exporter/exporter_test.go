@@ -226,7 +226,7 @@ func (e *ExporterSuite) TestExportCSV() {
 				err: nil,
 				file: [][]string{
 					{"Name", "When"},
-					{"\"Test Name\"", "2022-03-28 09:00:00"},
+					{"Test Name", "2022-03-28 09:00:00"},
 				},
 			},
 			description: "should success",
@@ -249,11 +249,34 @@ func (e *ExporterSuite) TestExportCSV() {
 				err: nil,
 				file: [][]string{
 					{"Name", "When"},
-					{"\"Test Name\"", "2022-03-28 09:00:00"},
+					{"Test Name", "2022-03-28 09:00:00"},
 				},
 			},
 			description: "should success with pointer struct",
 			no:          2,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				v: []*TestStruct{
+					{
+						Name: `Test Name with Quote ""`,
+						When: cast.NewPointer(commonTime.DateTime(time.Date(2022, 3, 28, 9, 0, 0, 0, time.UTC))),
+					},
+				},
+			},
+			funcMock: func(a args) {
+				mockingSentryConf(e.mock.sentry, a.ctx, "common.exporter.Export."+"CSV", context.Background(), true, true)
+			},
+			output: output{
+				err: nil,
+				file: [][]string{
+					{"Name", "When"},
+					{`Test Name with Quote ""`, "2022-03-28 09:00:00"},
+				},
+			},
+			description: "should success with string quote",
+			no:          3,
 		},
 	}
 
@@ -320,7 +343,7 @@ func (e *ExporterSuite) TestExportUsingConverter() {
 				err: nil,
 				file: [][]string{
 					{"Name", "When"},
-					{"\"Test Name\"", "9:00AM"},
+					{"Test Name", "9:00AM"},
 				},
 			},
 			description: "should success",
@@ -343,7 +366,7 @@ func (e *ExporterSuite) TestExportUsingConverter() {
 				err: nil,
 				file: [][]string{
 					{"Name", "When"},
-					{"\"Test Name\"", "9:00AM"},
+					{"Test Name", "9:00AM"},
 				},
 			},
 			description: "should success with pointer struct",

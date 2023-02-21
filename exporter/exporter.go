@@ -225,7 +225,7 @@ func (e *exporterCSV) ExtractRow(t reflect.Value, length int, convFunc map[strin
 			case commonTime.DateTime:
 				row = append(row, time.Time(interface_).Format(DefaultTimeFormat))
 			case string:
-				row = append(row, fmt.Sprintf("\"%s\"", interface_))
+				row = append(row, interface_)
 			case time.Time:
 				row = append(row, interface_.Format(DefaultTimeFormat))
 			default:
