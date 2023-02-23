@@ -14,9 +14,6 @@ var (
 	ErrMigrate          = errors.New("failed when migrating database")
 	ErrFailedParseToCSV = errors.New("failed when converting data to csv")
 	ErrFailedUploadToS3 = errors.New("failed when uploading file to s3")
-
-	// error exporter
-	ErrorExporterNotSupportedType = errors.New(`not supported type, the object should be slice`)
 )
 
 type Response struct {
@@ -54,14 +51,6 @@ var MapErrorResponse = map[error]Response{
 		Response: responseModel.Response{
 			Message: "Failed When Migrating The Database",
 			Status:  responseModel.StatusFail,
-		},
-	},
-
-	ErrorExporterNotSupportedType: {
-		StatusCode: http.StatusBadRequest,
-		Response: responseModel.Response{
-			Status:  responseModel.StatusError,
-			Message: ErrorExporterNotSupportedType.Error(),
 		},
 	},
 }

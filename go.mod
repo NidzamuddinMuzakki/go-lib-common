@@ -18,6 +18,7 @@ require (
 require (
 	bitbucket.org/moladinTech/go-lib-activity-log v1.0.3
 	cloud.google.com/go/storage v1.27.0
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/andreburgaud/crypt2go v1.1.0
 	github.com/aws/aws-sdk-go v1.17.7
@@ -40,7 +41,6 @@ require (
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	cloud.google.com/go/iam v0.10.0 // indirect
-	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect

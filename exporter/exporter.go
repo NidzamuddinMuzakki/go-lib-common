@@ -5,18 +5,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
-
 	"reflect"
 	"time"
 
-	commonError "bitbucket.org/moladinTech/go-lib-common/errors"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	commonTime "bitbucket.org/moladinTech/go-lib-common/time"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
-
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/go-playground/validator/v10"
+)
+
+var (
+	// error exporter
+	ErrorExporterNotSupportedType = errors.New(`not supported type, the object should be slice`)
 )
 
 const (
@@ -93,7 +96,7 @@ func (e *exporterExcel) Export(ctx context.Context, v interface{}) (ResultExport
 		return e.ReturnResult(file)
 	}
 
-	return ResultExport{}, commonError.ErrorExporterNotSupportedType
+	return ResultExport{}, ErrorExporterNotSupportedType
 }
 
 func (e *exporterExcel) ReturnResult(file *excelize.File) (ResultExport, error) {
@@ -194,7 +197,7 @@ func (e *exporterCSV) Export(ctx context.Context, v interface{}) (ResultExport, 
 		return e.ReturnResult(writer, &buffer)
 	}
 
-	return ResultExport{}, commonError.ErrorExporterNotSupportedType
+	return ResultExport{}, ErrorExporterNotSupportedType
 }
 
 func (e *exporterCSV) ExtractRow(t reflect.Value, length int, convFunc map[string]FuncConvert) []string {

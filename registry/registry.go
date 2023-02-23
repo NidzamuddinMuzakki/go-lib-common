@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/client/notification"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
 	"bitbucket.org/moladinTech/go-lib-common/encryption"
+	"bitbucket.org/moladinTech/go-lib-common/exporter"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/limiter"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/panic_recovery"
@@ -32,6 +33,8 @@ type IRegistry interface {
 	GetValidator() *validator.Validate
 	GetCache() cache.Cacher
 	GetEncryption() encryption.IEncryption
+	GetExporterExcel() exporter.Exporter
+	GetExporterCSV() exporter.Exporter
 }
 
 type registry struct {
@@ -49,6 +52,8 @@ type registry struct {
 	validator               *validator.Validate
 	cache                   cache.Cacher
 	encryption              encryption.IEncryption
+	exporterExcel           exporter.Exporter
+	exporterCSV             exporter.Exporter
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -135,6 +140,18 @@ func WithEncryption(encryption encryption.IEncryption) Option {
 	}
 }
 
+func WithExporterExcel(exporter_ exporter.Exporter) Option {
+	return func(s *registry) {
+		s.exporterExcel = exporter_
+	}
+}
+
+func WithExporterCSV(exporter_ exporter.Exporter) Option {
+	return func(s *registry) {
+		s.exporterCSV = exporter_
+	}
+}
+
 type Option func(r *registry)
 
 func NewRegistry(
@@ -203,4 +220,12 @@ func (r *registry) GetCache() cache.Cacher {
 
 func (r *registry) GetEncryption() encryption.IEncryption {
 	return r.encryption
+}
+
+func (r *registry) GetExporterExcel() exporter.Exporter {
+	return r.exporterExcel
+}
+
+func (r *registry) GetExporterCSV() exporter.Exporter {
+	return r.exporterCSV
 }
