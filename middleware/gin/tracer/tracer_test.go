@@ -31,10 +31,12 @@ func TestTracer_ShouldSucceed(t *testing.T) {
 		sentry := sentryMock.NewISentry(t)
 		sentry.On("SetStartTransaction",
 			mock.Anything,
-			"middleware.Tracer",
+			"common.middleware.gin.trace.Tracer",
 			"POST /",
 			mock.Anything,
 		).Once()
+
+		sentry.On("SetRequest", mock.Anything).Once()
 
 		tracer := tracer.NewTracer(validator.New(),
 			tracer.WithSentry(sentry),

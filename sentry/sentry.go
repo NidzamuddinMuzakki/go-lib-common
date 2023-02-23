@@ -3,6 +3,7 @@ package sentry
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"bitbucket.org/moladinTech/go-lib-common/constant"
@@ -79,6 +80,7 @@ type ISentry interface {
 	SetUserInfo(u UserInfoSentry)
 	HandlingPanic(err interface{})
 	SpanContext(span sentry.Span) context.Context
+	SetRequest(r *http.Request)
 }
 
 type Option func(*SentryPackage)
@@ -186,4 +188,11 @@ func Span() sentry.Span {
 
 func (s *SentryPackage) SpanContext(span sentry.Span) context.Context {
 	return span.Context()
+}
+
+// SetRequest add request to the current scope.
+func (s *SentryPackage) SetRequest(r *http.Request) {
+	sentry.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetRequest(r)
+	})
 }
