@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"time"
 
+	"bitbucket.org/moladinTech/go-lib-common/cast"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	commonTime "bitbucket.org/moladinTech/go-lib-common/time"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
@@ -79,7 +80,7 @@ func (e *exporterExcel) Export(ctx context.Context, v interface{}) (ResultExport
 		file.SetSheetName(file.GetSheetName(1), structName)
 
 		// set excel header from struct
-		e.GetHeaderFromStruct(reflect.New(structElem).Elem(), file, -1, 1, structName)
+		e.GetHeaderFromStruct(reflect.New(structElem).Elem(), file, cast.NewPointer(-1), cast.NewPointer(1), structName)
 
 		//get converter map function
 		convFunc := (*e)[structName]
@@ -90,7 +91,7 @@ func (e *exporterExcel) Export(ctx context.Context, v interface{}) (ResultExport
 			if t.Type().Kind() == reflect.Pointer {
 				t = t.Elem()
 			}
-			e.SetValueExcel(t, file, col, i+2, structName, convFunc)
+			e.SetValueExcel(t, file, &col, cast.NewPointer(i+2), structName, convFunc)
 		}
 
 		return e.ReturnResult(file)
@@ -111,21 +112,37 @@ func (e *exporterExcel) ReturnResult(file *excelize.File) (ResultExport, error) 
 	}, nil
 }
 
-func (e *exporterExcel) GetHeaderFromStruct(t reflect.Value, exc *excelize.File, col int, row int, sheetName string) {
+func (e *exporterExcel) GetHeaderFromStruct(t reflect.Value, exc *excelize.File, col *int, row *int, sheetName string) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Type().Field(i)
 		tag := field.Tag.Get(TagExporter)
 
+		if tag == "" {
+			switch field.Type.Kind() {
+			case reflect.Struct:
+				e.GetHeaderFromStruct(t.Field(i), exc, col, row, sheetName)
+				continue
+			}
+		}
+
 		if len(tag) > 0 && tag != "-" {
-			exc.SetCellValue(sheetName, incrColumnAndRow(&col, row), tag)
+			exc.SetCellValue(sheetName, incrColumnAndRow(col, row), tag)
 		}
 	}
 }
 
-func (e *exporterExcel) SetValueExcel(t reflect.Value, exc *excelize.File, col int, row int, sheetName string, convFunc map[string]FuncConvert) {
+func (e *exporterExcel) SetValueExcel(t reflect.Value, exc *excelize.File, col *int, row *int, sheetName string, convFunc map[string]FuncConvert) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Type().Field(i)
 		tag := field.Tag.Get(TagExporter)
+
+		if tag == "" {
+			switch field.Type.Kind() {
+			case reflect.Struct:
+				e.SetValueExcel(t.Field(i), exc, col, row, sheetName, convFunc)
+				continue
+			}
+		}
 
 		if len(tag) > 0 && tag != "-" {
 
@@ -140,7 +157,7 @@ func (e *exporterExcel) SetValueExcel(t reflect.Value, exc *excelize.File, col i
 
 			// call preprocessing function
 			if func_, ok := convFunc[tag]; ok {
-				exc.SetCellValue(sheetName, incrColumnAndRow(&col, row), func_(interface_))
+				exc.SetCellValue(sheetName, incrColumnAndRow(col, row), func_(interface_))
 				continue
 			}
 
@@ -148,17 +165,17 @@ func (e *exporterExcel) SetValueExcel(t reflect.Value, exc *excelize.File, col i
 
 			switch interface_ := interface_.(type) {
 			case commonTime.DateTime:
-				exc.SetCellValue(sheetName, incrColumnAndRow(&col, row), time.Time(interface_))
+				exc.SetCellValue(sheetName, incrColumnAndRow(col, row), time.Time(interface_))
 			default:
-				exc.SetCellValue(sheetName, incrColumnAndRow(&col, row), interface_)
+				exc.SetCellValue(sheetName, incrColumnAndRow(col, row), interface_)
 			}
 		}
 	}
 }
 
-func incrColumnAndRow(col *int, row int) string {
+func incrColumnAndRow(col *int, row *int) string {
 	*col++
-	return fmt.Sprintf("%s%d", excelize.ToAlphaString(*col), row)
+	return fmt.Sprintf("%s%d", excelize.ToAlphaString(*col), *row)
 }
 
 type exporterCSV map[string]map[string]FuncConvert
@@ -206,6 +223,14 @@ func (e *exporterCSV) ExtractRow(t reflect.Value, length int, convFunc map[strin
 		field := t.Type().Field(i)
 		tag := field.Tag.Get(TagExporter)
 
+		if tag == "" {
+			switch field.Type.Kind() {
+			case reflect.Struct:
+				row = append(row, e.ExtractRow(t.Field(i), length, convFunc)...)
+				continue
+			}
+		}
+
 		if len(tag) > 0 && tag != "-" {
 
 			type_ := t.Field(i)              // get field[idx] on the struct
@@ -244,6 +269,14 @@ func (e *exporterCSV) ExtractHeader(t reflect.Value) []string {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Type().Field(i)
 		tag := field.Tag.Get(TagExporter)
+
+		if tag == "" {
+			switch field.Type.Kind() {
+			case reflect.Struct:
+				row = append(row, e.ExtractHeader(t.Field(i))...)
+				continue
+			}
+		}
 
 		if len(tag) > 0 && tag != "-" {
 			row = append(row, tag)
