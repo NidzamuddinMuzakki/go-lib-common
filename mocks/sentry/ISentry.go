@@ -8,6 +8,8 @@ import (
 	go_lib_commonsentry "bitbucket.org/moladinTech/go-lib-common/sentry"
 	gin "github.com/gin-gonic/gin"
 
+	http "net/http"
+
 	mock "github.com/stretchr/testify/mock"
 
 	sentry "github.com/getsentry/sentry-go"
@@ -74,6 +76,11 @@ func (_m *ISentry) GetGinMiddleware() gin.HandlerFunc {
 // HandlingPanic provides a mock function with given fields: err
 func (_m *ISentry) HandlingPanic(err interface{}) {
 	_m.Called(err)
+}
+
+// SetRequest provides a mock function with given fields: r
+func (_m *ISentry) SetRequest(r *http.Request) {
+	_m.Called(r)
 }
 
 // SetStartTransaction provides a mock function with given fields: ctx, spanName, transactionName, fn

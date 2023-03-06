@@ -23,6 +23,7 @@ require (
 	github.com/andreburgaud/crypt2go v1.1.0
 	github.com/aws/aws-sdk-go v1.17.7
 	github.com/bsm/redislock v0.7.2
+	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/jinzhu/copier v0.3.5
