@@ -18,6 +18,8 @@ import (
 
 type GCSClient interface {
 	UploadFileInByte(ctx context.Context, fileName string, data []byte) (string, error)
+	GetSignedURL(context.Context, string, time.Duration) (string, error)
+	Upload(context.Context, *UploadOptions) error
 }
 
 type GCSPackage struct {
@@ -168,4 +170,68 @@ func (g *GCSPackage) UploadFileInByte(ctx context.Context, fileName string, data
 	}
 
 	return url, nil
+}
+
+func (g *GCSPackage) GetSignedURL(ctx context.Context, object string, timout time.Duration) (string, error) {
+	const logCtx = "common.client.gcp.storage.GetSignedURL"
+
+	span := g.Sentry.StartSpan(ctx, string(logCtx))
+	defer g.Sentry.Finish(span)
+	ctx = g.Sentry.SpanContext(*span)
+
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	default:
+	}
+
+	url, err := g.GCSClient.Bucket(g.BucketName).SignedURL(object, &storage.SignedURLOptions{
+		GoogleAccessID: g.ServiceAccountKeyJSON.ClientEmail,
+		PrivateKey:     []byte(g.ServiceAccountKeyJSON.PrivateKey),
+		Method:         "GET",
+		Expires:        time.Now().Add(time.Duration(g.SignedUrlTimeInMinutes) * time.Minute),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
+
+}
+
+type UploadOptions struct {
+	Object  string
+	Timeout time.Duration
+	File    io.Reader
+	// making the object to public
+	// the user can directly access the file without authentication
+	Public bool
+}
+
+func (g *GCSPackage) Upload(ctx context.Context, opt *UploadOptions) error {
+	const logCtx = "common.client.gcp.storage.Upload"
+
+	span := g.Sentry.StartSpan(ctx, string(logCtx))
+	defer g.Sentry.Finish(span)
+	ctx = g.Sentry.SpanContext(*span)
+
+	ctx, cancel := context.WithTimeout(ctx, opt.Timeout)
+	defer cancel()
+
+	objWriter := g.GCSClient.Bucket(g.BucketName).Object(opt.Object).NewWriter(ctx)
+
+	if _, err := io.Copy(objWriter, opt.File); err != nil {
+		return err
+	}
+
+	if err := objWriter.Close(); err != nil {
+		return err
+	}
+
+	if opt.Public {
+		acl := g.GCSClient.Bucket(g.BucketName).Object(opt.Object).ACL()
+		acl.Set(ctx, storage.AllUsers, storage.RoleReader)
+	}
+
+	return nil
 }
