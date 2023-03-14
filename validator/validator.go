@@ -38,6 +38,23 @@ func ToErrResponse(err error) string {
 				errors = append(errors, fmt.Sprintf("%s must be a valid URL", err.Field()))
 			case "oneof":
 				errors = append(errors, fmt.Sprintf("%s must be an oneof [%s]", err.Field(), err.Param()))
+			case "required_if":
+				params := strings.Split(err.Param(), " ")
+				formattedParams := params[0]
+				for i, param := range params {
+					if i > 0 {
+						if i%2 != 0 {
+							formattedParams += fmt.Sprintf(" is %s", param)
+						} else {
+							formattedParams += fmt.Sprintf(" and %s", param)
+						}
+					}
+				}
+				errors = append(errors, fmt.Sprintf("%s is a required if %s", err.Field(), formattedParams))
+			case "required_unless":
+				paramString := err.Param()
+				formattedParams := strings.Replace(paramString, " ", " is not ", -1)
+				errors = append(errors, fmt.Sprintf("%s is a required if %s", err.Field(), formattedParams))
 			case "required_without":
 				errors = append(errors, fmt.Sprintf("%s is a required if %s is empty", err.Field(), err.Param()))
 			case "required_without_all":

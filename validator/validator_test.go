@@ -14,6 +14,8 @@ type Person struct {
 	Weight  string `validate:"ltecsfield=Height"`
 	Url     string `validate:"url"`
 	Height  int    `validate:"max=100"`
+	Gender  uint   `validate:"required_if=Url url Height 400"`
+	Role    string `validate:"required_unless=Url uri"`
 }
 
 func TestNewValidator_ShouldSucceedToError(t *testing.T) {
@@ -32,6 +34,8 @@ func TestNewValidator_ShouldSucceedToError(t *testing.T) {
 				"Weight is less than to another Height field",
 				"Url must be a valid URL",
 				"Height must be a maximum of 100 in length",
+				"Gender is a required if Url is url and Height is 400",
+				"Role is a required if Url is not uri",
 			}, ","),
 			errText,
 		)
