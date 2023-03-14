@@ -26,6 +26,7 @@ type ParamHttpErrResp struct {
 	Err      error
 	GinCtx   *gin.Context
 	Registry registry.IRegistry
+	Data     interface{}
 }
 
 // HttpErrResp is helper to logger the error, send response and send notification (if statusCode >= 500)
@@ -71,9 +72,17 @@ func HttpErrResp(ctx context.Context, p ParamHttpErrResp) {
 		})
 		return
 	}
+	// append data
+	if p.Data != nil {
+		val, ok := responseMap.Response.(responseModel.Response)
+		if ok {
+			val.Data = p.Data
+		}
+		responseMap.Response = val
+	}
 
 	c.JSON(responseMap.StatusCode, responseMap.Response)
-	return
+
 }
 
 type httpResp struct {
