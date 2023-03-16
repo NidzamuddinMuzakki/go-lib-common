@@ -14,6 +14,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/panic_recovery"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/tracer"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	"bitbucket.org/moladinTech/go-lib-common/signature"
 	"bitbucket.org/moladinTech/go-lib-common/time"
 	"github.com/go-playground/validator/v10"
 )
@@ -35,6 +36,7 @@ type IRegistry interface {
 	GetEncryption() encryption.IEncryption
 	GetExporterExcel() exporter.Exporter
 	GetExporterCSV() exporter.Exporter
+	GetSignature() signature.GenerateAndVerify
 }
 
 type registry struct {
@@ -54,6 +56,7 @@ type registry struct {
 	encryption              encryption.IEncryption
 	exporterExcel           exporter.Exporter
 	exporterCSV             exporter.Exporter
+	signature               signature.GenerateAndVerify
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -152,6 +155,12 @@ func WithExporterCSV(exporter_ exporter.Exporter) Option {
 	}
 }
 
+func WithSignature(signature signature.GenerateAndVerify) Option {
+	return func(s *registry) {
+		s.signature = signature
+	}
+}
+
 type Option func(r *registry)
 
 func NewRegistry(
@@ -228,4 +237,8 @@ func (r *registry) GetExporterExcel() exporter.Exporter {
 
 func (r *registry) GetExporterCSV() exporter.Exporter {
 	return r.exporterCSV
+}
+
+func (r *registry) GetSignature() signature.GenerateAndVerify {
+	return r.signature
 }
