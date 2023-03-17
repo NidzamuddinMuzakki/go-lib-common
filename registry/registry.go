@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
 	"bitbucket.org/moladinTech/go-lib-common/encryption"
 	"bitbucket.org/moladinTech/go-lib-common/exporter"
+	"bitbucket.org/moladinTech/go-lib-common/kafka"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/limiter"
 	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/panic_recovery"
@@ -37,6 +38,7 @@ type IRegistry interface {
 	GetExporterExcel() exporter.Exporter
 	GetExporterCSV() exporter.Exporter
 	GetSignature() signature.GenerateAndVerify
+	GetPublisher(name string) kafka.IPublisher
 }
 
 type registry struct {
@@ -57,6 +59,7 @@ type registry struct {
 	exporterExcel           exporter.Exporter
 	exporterCSV             exporter.Exporter
 	signature               signature.GenerateAndVerify
+	publisher               map[string]kafka.IPublisher
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -161,6 +164,12 @@ func WithSignature(signature signature.GenerateAndVerify) Option {
 	}
 }
 
+func AddPublisher(name string, publisher kafka.IPublisher) Option {
+	return func(s *registry) {
+		s.publisher[name] = publisher
+	}
+}
+
 type Option func(r *registry)
 
 func NewRegistry(
@@ -241,4 +250,11 @@ func (r *registry) GetExporterCSV() exporter.Exporter {
 
 func (r *registry) GetSignature() signature.GenerateAndVerify {
 	return r.signature
+}
+
+func (r *registry) GetPublisher(name string) kafka.IPublisher {
+	if publisher, exist := r.publisher[name]; exist {
+		return publisher
+	}
+	return nil
 }
