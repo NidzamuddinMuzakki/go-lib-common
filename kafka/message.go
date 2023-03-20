@@ -36,7 +36,7 @@ const (
 )
 
 type MessageBody[T any] struct {
-	Type DataType `json:"sender"`
+	Type DataType `json:"type"`
 	Data T        `json:"data"`
 }
 
