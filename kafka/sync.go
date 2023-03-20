@@ -36,7 +36,7 @@ func (sp *SyncPublisher) Publish(ctx context.Context, topic Topic, message IMess
 		defer sp.sentry.Finish(span)
 	}
 
-	messageHeaders := message.GetHeaders()
+	messageHeaders := message.GetHeaders(ctx)
 	headers := make([]sarama.RecordHeader, 0, len(messageHeaders))
 	for key, value := range messageHeaders {
 		headers = append(headers, sarama.RecordHeader{

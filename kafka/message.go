@@ -1,16 +1,17 @@
 package kafka
 
 import (
-	commonContext "bitbucket.org/moladinTech/go-lib-common/context"
 	"context"
 	"encoding/json"
 	"time"
+
+	commonContext "bitbucket.org/moladinTech/go-lib-common/context"
 
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 )
 
 type IMessage interface {
-	GetHeaders() map[string]string
+	GetHeaders(ctx context.Context) map[string]string
 	GetMeta() any
 	GetValue() (string, error)
 }
