@@ -9,25 +9,25 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-type ASyncPublisher struct {
+type AsyncPublisher struct {
 	producer sarama.AsyncProducer
 	sentry   commonSentry.ISentry
 }
 
-func NewASyncPublisher(
+func NewAsyncPublisher(
 	brokers []string,
 	config *sarama.Config,
 	sentry commonSentry.ISentry,
-) (*ASyncPublisher, error) {
+) (*AsyncPublisher, error) {
 	producer, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ASyncPublisher{producer: producer, sentry: sentry}, nil
+	return &AsyncPublisher{producer: producer, sentry: sentry}, nil
 }
 
-func (asp *ASyncPublisher) Publish(ctx context.Context, topic Topic, message IMessage) (int32, int64, error) {
+func (asp *AsyncPublisher) Publish(ctx context.Context, topic Topic, message IMessage) (int32, int64, error) {
 	const logCtx = "kafka.async.ASyncPublisher.Publish"
 
 	if asp.sentry != nil {
