@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	commonContext "bitbucket.org/moladinTech/go-lib-common/context"
+	"context"
 	"encoding/json"
 	"time"
 
@@ -21,7 +23,6 @@ type MessageEvent struct {
 
 type MessageMeta struct {
 	Sender    string     `json:"sender"`
-	RequestID string     `json:"x-request-id"`
 	SendingAt time.Time  `json:"sendingAt"`
 	ExpiredAt *time.Time `json:"expiredAt"`
 	Version   *string    `json:"version"`
@@ -57,9 +58,9 @@ func NewMessage[T any](event MessageEvent, meta MessageMeta, bodyType DataType, 
 	}
 }
 
-func (m *Message[T]) GetHeaders() map[string]string {
+func (m *Message[T]) GetHeaders(ctx context.Context) map[string]string {
 	headers := make(map[string]string, 1)
-	headers[constant.XRequestIdHeader] = m.Meta.RequestID
+	headers[constant.XRequestIdHeader] = commonContext.GetValueAsString(ctx, constant.XRequestIdHeader)
 	return headers
 }
 

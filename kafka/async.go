@@ -28,7 +28,7 @@ func NewAsyncPublisher(
 }
 
 func (asp *AsyncPublisher) Publish(ctx context.Context, topic Topic, message IMessage) (int32, int64, error) {
-	const logCtx = "kafka.async.ASyncPublisher.Publish"
+	const logCtx = "kafka.async.AsyncPublisher.Publish"
 
 	if asp.sentry != nil {
 		span := asp.sentry.StartSpan(ctx, logCtx)
