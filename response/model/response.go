@@ -11,6 +11,7 @@ const (
 type Response struct {
 	Status       any    `json:"status"`
 	Message      string `json:"message"`
+	Code         string `json:"code,omitempty"`
 	Data         any    `json:"data,omitempty"`
 	Limit        uint   `json:"limit,omitempty"`
 	TotalRecords uint64 `json:"totalRecords,omitempty"`
