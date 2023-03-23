@@ -20,6 +20,7 @@ require (
 	cloud.google.com/go/storage v1.27.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/squirrel v1.5.3
+	github.com/Shopify/sarama v1.38.1
 	github.com/andreburgaud/crypt2go v1.1.0
 	github.com/aws/aws-sdk-go v1.17.7
 	github.com/bsm/redislock v0.7.2
@@ -42,7 +43,6 @@ require (
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	cloud.google.com/go/iam v0.10.0 // indirect
-	github.com/Shopify/sarama v1.38.1 // indirect
 	github.com/eapache/go-resiliency v1.3.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230111030713-bf00bc1b83b6 // indirect
 	github.com/eapache/queue v1.1.0 // indirect

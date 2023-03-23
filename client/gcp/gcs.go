@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 
 	"bitbucket.org/moladinTech/go-lib-common/logger"
@@ -16,10 +17,15 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+const (
+	coldLineStorageClass = "COLDLINE"
+)
+
 type GCSClient interface {
 	UploadFileInByte(ctx context.Context, fileName string, data []byte) (string, error)
 	GetSignedURL(context.Context, string, time.Duration) (string, error)
 	Upload(context.Context, *UploadOptions) error
+	Delete(ctx context.Context, object string, hardDelete bool, timeout time.Duration) error
 }
 
 type GCSPackage struct {
@@ -231,6 +237,45 @@ func (g *GCSPackage) Upload(ctx context.Context, opt *UploadOptions) error {
 	if opt.Public {
 		acl := g.GCSClient.Bucket(g.BucketName).Object(opt.Object).ACL()
 		acl.Set(ctx, storage.AllUsers, storage.RoleReader)
+	}
+
+	return nil
+}
+
+func (g *GCSPackage) Delete(ctx context.Context, object string, hardDelete bool, timeout time.Duration) error {
+	const logCtx = "common.client.gcp.storage.Delete"
+
+	span := g.Sentry.StartSpan(ctx, string(logCtx))
+	defer g.Sentry.Finish(span)
+	ctx = g.Sentry.SpanContext(*span)
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	o := g.GCSClient.Bucket(g.BucketName).Object(object)
+
+	// Optional: set a generation-match precondition to avoid potential race
+	// conditions and data corruptions. The request to copy is aborted if the
+	// object's generation number does not match your precondition.
+	attrs, err := o.Attrs(ctx)
+	if err != nil {
+		return errors.Wrap(err, "object.Attrs")
+	}
+	o = o.If(storage.Conditions{GenerationMatch: attrs.Generation})
+
+	if hardDelete {
+		if err := o.Delete(ctx); err != nil {
+			return errors.Wrap(err, "object.HardDelete")
+		}
+		return nil
+	}
+
+	// You can't change an object's storage class directly, the only way is
+	// to rewrite the object with the desired storage class.
+	copier := o.CopierFrom(o)
+	copier.StorageClass = coldLineStorageClass
+	if _, err := copier.Run(ctx); err != nil {
+		return errors.Wrap(err, "object.Copy.Run")
 	}
 
 	return nil
