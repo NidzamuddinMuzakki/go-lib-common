@@ -6,11 +6,13 @@ import (
 	"encoding/hex"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"bitbucket.org/moladinTech/go-lib-activity-log/model"
 	moladinEvoClient "bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
 	"bitbucket.org/moladinTech/go-lib-common/constant"
+	"bitbucket.org/moladinTech/go-lib-common/middleware/gin/auth/rbac"
 	responseModel "bitbucket.org/moladinTech/go-lib-common/response/model"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	"bitbucket.org/moladinTech/go-lib-common/signature"
@@ -26,12 +28,15 @@ type IMiddlewareAuth interface {
 	AuthXApiKey() gin.HandlerFunc
 	Auth() gin.HandlerFunc
 	AuthSignature() gin.HandlerFunc
+	AuthRoleRBAC(allowedRoles map[string]bool, applicationCode string) gin.HandlerFunc
+	AuthPermissionRBAC(allowedPermissions map[string]bool, applicationCode string) gin.HandlerFunc
 }
 
 type MiddlewareAuthPackage struct {
 	Sentry                  sentry.ISentry `validate:"required"`
 	MoladinEvoClient        moladinEvoClient.IMoladinEvo
 	Signature               signature.GenerateAndVerify
+	RBACClient              rbac.IClientRBAC
 	SignatureExpirationTime *uint
 	ConfigApiKey            string
 	PermittedRoles          []string
@@ -84,6 +89,12 @@ func WithServiceName(serviceName string) Option {
 func WithSecretKey(secretKey string) Option {
 	return func(s *MiddlewareAuthPackage) {
 		s.SecretKey = secretKey
+	}
+}
+
+func WithRBACClient(rbacClient rbac.IClientRBAC) Option {
+	return func(s *MiddlewareAuthPackage) {
+		s.RBACClient = rbacClient
 	}
 }
 
@@ -261,5 +272,69 @@ func (a *MiddlewareAuthPackage) AuthSignature() gin.HandlerFunc {
 
 		c.Next()
 		return
+	}
+}
+
+func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles map[string]bool, applicationCode string) gin.HandlerFunc {
+	return func(gc *gin.Context) {
+		var token = gc.GetHeader(constant.AuthorizationHeader)
+		if token == "" {
+			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			return
+		}
+
+		tokenArr := strings.Split(token, " ")
+		lastIndex := len(tokenArr) - 1
+		token = tokenArr[lastIndex]
+		isAllowed, userDetail, err := a.RBACClient.IsRoleAllowed(allowedRoles, token, applicationCode)
+		if err != nil {
+			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: err.Error(),
+			})
+			return
+		}
+
+		if !isAllowed {
+			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized),
+			})
+			return
+		}
+
+		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, userDetail))
+		gc.Next()
+	}
+}
+
+func (a *MiddlewareAuthPackage) AuthPermissionRBAC(allowedPermissions map[string]bool, applicationCode string) gin.HandlerFunc {
+	return func(gc *gin.Context) {
+		var token = gc.GetHeader(constant.AuthorizationHeader)
+		if token == "" {
+			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized)})
+			return
+		}
+
+		tokenArr := strings.Split(token, " ")
+		lastIndex := len(tokenArr) - 1
+		token = tokenArr[lastIndex]
+		isAllowed, userDetail, err := a.RBACClient.IsPermissionAllowed(allowedPermissions, token, applicationCode)
+		if err != nil {
+			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: err.Error(),
+			})
+			return
+		}
+
+		if !isAllowed {
+			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
+				Status: responseModel.StatusFail, Message: http.StatusText(http.StatusUnauthorized),
+			})
+			return
+		}
+
+		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, userDetail))
+		gc.Next()
 	}
 }

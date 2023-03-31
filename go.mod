@@ -17,6 +17,7 @@ require (
 
 require (
 	bitbucket.org/moladinTech/go-lib-activity-log v1.0.3
+	bitbucket.org/moladinTech/go-lib-rbac v0.0.0-20221227065734-d6df29c3859a
 	cloud.google.com/go/storage v1.27.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/squirrel v1.5.3

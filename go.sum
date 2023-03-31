@@ -2,6 +2,8 @@ bazil.org/fuse v0.0.0-20160811212531-371fbbdaa898/go.mod h1:Xbm+BRKSBEpa4q4hTSxo
 bazil.org/fuse v0.0.0-20200407214033-5883e5a4b512/go.mod h1:FbcW6z/2VytnFDhZfumh8Ss8zxHE6qpMP5sHTRe0EaM=
 bitbucket.org/moladinTech/go-lib-activity-log v1.0.3 h1:IzF/+M9FkQq/+bDih9wdYEy0KvPJDq2BgW4qC94tZlM=
 bitbucket.org/moladinTech/go-lib-activity-log v1.0.3/go.mod h1:mRlvHX8tFhqdNARfU5KAAnBCvufyknEUThK7P63zHuA=
+bitbucket.org/moladinTech/go-lib-rbac v0.0.0-20221227065734-d6df29c3859a h1:qEKIKN/j45gQScaYhmthbnnolDz+VX1XTn6cKAZJyuc=
+bitbucket.org/moladinTech/go-lib-rbac v0.0.0-20221227065734-d6df29c3859a/go.mod h1:76l8RXDgBaAijBAiQicqFdXKlB0cXDdboI7yFvik89w=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
