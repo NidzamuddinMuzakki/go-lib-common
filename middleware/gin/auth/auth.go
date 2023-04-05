@@ -28,8 +28,8 @@ type IMiddlewareAuth interface {
 	AuthXApiKey() gin.HandlerFunc
 	Auth() gin.HandlerFunc
 	AuthSignature() gin.HandlerFunc
-	AuthRoleRBAC(allowedRoles map[string]bool, applicationCode string) gin.HandlerFunc
-	AuthPermissionRBAC(allowedPermissions map[string]bool, applicationCode string) gin.HandlerFunc
+	AuthRoleRBAC(allowedRoles []string, applicationCode string) gin.HandlerFunc
+	AuthPermissionRBAC(allowedPermissions []string, applicationCode string) gin.HandlerFunc
 }
 
 type MiddlewareAuthPackage struct {
@@ -275,7 +275,7 @@ func (a *MiddlewareAuthPackage) AuthSignature() gin.HandlerFunc {
 	}
 }
 
-func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles map[string]bool, applicationCode string) gin.HandlerFunc {
+func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles []string, applicationCode string) gin.HandlerFunc {
 	return func(gc *gin.Context) {
 		var token = gc.GetHeader(constant.AuthorizationHeader)
 		if token == "" {
@@ -307,7 +307,7 @@ func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles map[string]bool, appli
 	}
 }
 
-func (a *MiddlewareAuthPackage) AuthPermissionRBAC(allowedPermissions map[string]bool, applicationCode string) gin.HandlerFunc {
+func (a *MiddlewareAuthPackage) AuthPermissionRBAC(allowedPermissions []string, applicationCode string) gin.HandlerFunc {
 	return func(gc *gin.Context) {
 		var token = gc.GetHeader(constant.AuthorizationHeader)
 		if token == "" {

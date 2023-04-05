@@ -7,9 +7,9 @@ import (
 )
 
 type IClientRBAC interface {
-	IsRoleAllowed(allowedRoles map[string]bool, token string, applicationCode string) (
+	IsRoleAllowed(allowedRoles []string, token string, applicationCode string) (
 		isAllowed bool, userDetail *model.Me, err error)
-	IsPermissionAllowed(allowedPermissions map[string]bool, token string, applicationCode string) (
+	IsPermissionAllowed(allowedPermissions []string, token string, applicationCode string) (
 		isAllowed bool, userDetail *model.Me, err error)
 	GetUserDetail(token string, applicationCode string) (userDetail *model.Me, err error)
 }
@@ -50,8 +50,9 @@ func NewRBAC(validator *validator.Validate, options ...Option) *ClientRBAC {
 	return &clientOptions
 }
 
-func (c *ClientRBAC) IsRoleAllowed(allowedRoles map[string]bool, token string, applicationCode string) (
+func (c *ClientRBAC) IsRoleAllowed(allowedRolesArr []string, token string, applicationCode string) (
 	isAllowed bool, userDetail *model.Me, err error) {
+	allowedRoles := c.convertRolesToMap(allowedRolesArr...)
 	userDetail, err = c.RBACInstance.Me(token, applicationCode)
 	if err != nil {
 		return false, nil, err
@@ -66,8 +67,18 @@ func (c *ClientRBAC) IsRoleAllowed(allowedRoles map[string]bool, token string, a
 	return false, userDetail, nil
 }
 
-func (c *ClientRBAC) IsPermissionAllowed(allowedPermissions map[string]bool, token string, applicationCode string) (
+func (c *ClientRBAC) convertRolesToMap(roles ...string) map[string]bool {
+	allowedRoles := make(map[string]bool, len(roles))
+	for _, role := range roles {
+		allowedRoles[role] = true
+	}
+
+	return allowedRoles
+}
+
+func (c *ClientRBAC) IsPermissionAllowed(allowedPermissionsArr []string, token string, applicationCode string) (
 	isAllowed bool, userDetail *model.Me, err error) {
+	allowedPermissions := c.convertPermissionToMap(allowedPermissionsArr...)
 	userDetail, err = c.RBACInstance.Me(token, applicationCode)
 	if err != nil {
 		return false, nil, err
@@ -80,6 +91,15 @@ func (c *ClientRBAC) IsPermissionAllowed(allowedPermissions map[string]bool, tok
 	}
 
 	return false, userDetail, nil
+}
+
+func (c *ClientRBAC) convertPermissionToMap(permissions ...string) map[string]bool {
+	allowedPermissions := make(map[string]bool, len(permissions))
+	for _, role := range permissions {
+		allowedPermissions[role] = true
+	}
+
+	return allowedPermissions
 }
 
 func (c *ClientRBAC) GetUserDetail(token string, applicationCode string) (userDetail *model.Me, err error) {
