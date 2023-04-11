@@ -8,7 +8,8 @@ Ketika init Auth RBAC, semua host *required*.
 NewRBAC(
     validator, 
     WithHTTPHost(httpHost),
-    WithGRPCHost(grpcHost)
+    WithGRPCHost(grpcHost),
+    WithApplicationCode(applicationCode),
     )
 ```
 

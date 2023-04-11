@@ -453,6 +453,7 @@ func TestAuthSignature_ErrorOnKeyAndSignatureNotMatch(t *testing.T) {
 		sentry.On("StartSpan", mock.Anything, mock.Anything).
 			Return(&span).
 			Once()
+
 		sign := signatureMock.NewGenerateAndVerify(t)
 		sign.On("Verify", mock.Anything, mock.Anything, mock.Anything).
 			Return(false).
