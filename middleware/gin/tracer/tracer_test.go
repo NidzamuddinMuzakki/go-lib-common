@@ -36,8 +36,6 @@ func TestTracer_ShouldSucceed(t *testing.T) {
 			mock.Anything,
 		).Once()
 
-		sentry.On("SetRequest", mock.Anything).Once()
-
 		tracer := tracer.NewTracer(validator.New(),
 			tracer.WithSentry(sentry),
 		)

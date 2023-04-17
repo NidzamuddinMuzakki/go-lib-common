@@ -97,6 +97,7 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 			fmt.Sprintf("%s %s", c.Request.Method, c.FullPath()),
 			func(ctx context.Context) (string, uint8) {
 				c.Request = c.Request.WithContext(ctx)
+				s.Sentry.SetRequest(c.Request)
 				c.Next()
 				var statusSpan uint8
 				status := fmt.Sprint(c.Writer.Status())
@@ -112,7 +113,6 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 				return status, statusSpan
 			},
 		)
-		s.Sentry.SetRequest(c.Request)
 
 		latency := time.Since(start)
 		ctxResp := logger.AddLoggingTag(c.Request.Context(), logger.Tag{Key: tagLatency, Value: latency})
