@@ -20,9 +20,12 @@ import (
 func TestShouldBeAbleToGetRequestWithDefaultValue(t *testing.T) {
 	red := &redis.IntCmd{}
 	red.SetVal(1)
+	ttl := &redis.DurationCmd{}
+	ttl.SetVal(-1)
 
 	mockCacher := mocks.NewCacher(t)
 	mockCacher.On("Incr", context.TODO(), mock.Anything).Return(red, nil)
+	mockCacher.On("Ttl", context.TODO(), mock.Anything).Return(ttl, nil)
 	mockCacher.On("Expire", context.TODO(), mock.Anything, mock.Anything).Return(nil, nil)
 
 	_, limiter := NewLimiter(
@@ -56,9 +59,12 @@ func TestShouldBeAbleToGetRequestWithDefaultValue(t *testing.T) {
 func TestShouldBeAbleToGetRequestWithCustomValue(t *testing.T) {
 	red := &redis.IntCmd{}
 	red.SetVal(1)
+	ttl := &redis.DurationCmd{}
+	ttl.SetVal(-1)
 
 	mockCacher := mocks.NewCacher(t)
 	mockCacher.On("Incr", context.TODO(), mock.Anything).Return(red, nil)
+	mockCacher.On("Ttl", context.TODO(), mock.Anything).Return(ttl, nil)
 	mockCacher.On("Expire", context.TODO(), mock.Anything, mock.Anything).Return(nil, nil)
 
 	mlp, _ := NewLimiter(
@@ -92,9 +98,12 @@ func TestShouldBeAbleToGetRequestWithCustomValue(t *testing.T) {
 func TestShouldBeUnableToGetRequest(t *testing.T) {
 	red := &redis.IntCmd{}
 	red.SetVal(1)
+	ttl := &redis.DurationCmd{}
+	ttl.SetVal(-1)
 
 	mockCacher := mocks.NewCacher(t)
 	mockCacher.On("Incr", context.TODO(), mock.Anything).Return(red, nil)
+	mockCacher.On("Ttl", context.TODO(), mock.Anything).Return(ttl, nil)
 	mockCacher.On("Expire", context.TODO(), mock.Anything, mock.Anything).Return(nil, nil)
 
 	mlp, _ := NewLimiter(

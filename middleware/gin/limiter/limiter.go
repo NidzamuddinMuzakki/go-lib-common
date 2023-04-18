@@ -67,7 +67,12 @@ func NewLimiter(validator *validator.Validate, options ...Option) (*MiddlewareLi
 			logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
 		}
 
-		if incr.Val() == 1 {
+		ttl, err := mlp.Cache.Ttl(ctx, key)
+		if err != nil {
+			logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
+		}
+
+		if ttl.Val() == -1 {
 			_, err := mlp.Cache.Expire(ctx, key, time.Duration(mlp.DefaultTTL)*time.Second)
 			if err != nil {
 				logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
@@ -117,7 +122,12 @@ func (a *MiddlewareLimitPackage) WithCustomLimit(rt RateLimit) gin.HandlerFunc {
 			logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
 		}
 
-		if incr.Val() == 1 {
+		ttl, err := a.Cache.Ttl(ctx, key)
+		if err != nil {
+			logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})
+		}
+
+		if ttl.Val() == -1 {
 			_, err := a.Cache.Expire(ctx, key, time.Duration(*rt.TTL)*time.Second)
 			if err != nil {
 				logger.Error(ctx, "error", err, logger.Tag{Key: "logCtx", Value: logCtx})

@@ -27,6 +27,7 @@ type Cacher interface {
 	BatchGet(ctx context.Context, keys []Key, dest any) error
 	Incr(ctx context.Context, key string) (*redis.IntCmd, error)
 	Expire(ctx context.Context, key string, ttl time.Duration) (*redis.BoolCmd, error)
+	Ttl(ctx context.Context, key string) (*redis.DurationCmd, error)
 }
 
 type Driver string

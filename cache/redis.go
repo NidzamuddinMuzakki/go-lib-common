@@ -53,6 +53,11 @@ func (r *Redis) Delete(ctx context.Context, key Key) error {
 	return r.client.Del(ctx, string(key)).Err()
 }
 
+func (r *Redis) Ttl(ctx context.Context, key string) (*redis.DurationCmd, error) {
+	val := r.client.TTL(ctx, key)
+	return val, val.Err()
+}
+
 func (r *Redis) BatchSet(ctx context.Context, datas []Data, duration time.Duration) error {
 	pipe := r.client.Pipeline()
 	var err error

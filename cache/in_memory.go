@@ -159,6 +159,9 @@ func (im *InMemory) Incr(ctx context.Context, key string) (*redis.IntCmd, error)
 func (im *InMemory) Expire(ctx context.Context, key string, ttl time.Duration) (*redis.BoolCmd, error) {
 	return nil, nil
 }
+func (im *InMemory) Ttl(ctx context.Context, key string) (*redis.DurationCmd, error) {
+	return nil, nil
+}
 func (im *InMemory) GetRedisInstance() *redis.Client {
 	return nil
 }

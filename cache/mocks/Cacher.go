@@ -172,6 +172,29 @@ func (_m *Cacher) SetNx(ctx context.Context, data cache.Data, duration time.Dura
 	return r0, r1
 }
 
+// Ttl provides a mock function with given fields: ctx, key
+func (_m *Cacher) Ttl(ctx context.Context, key string) (*redis.DurationCmd, error) {
+	ret := _m.Called(ctx, key)
+
+	var r0 *redis.DurationCmd
+	if rf, ok := ret.Get(0).(func(context.Context, string) *redis.DurationCmd); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.DurationCmd)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewCacher interface {
 	mock.TestingT
 	Cleanup(func())
