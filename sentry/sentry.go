@@ -3,6 +3,7 @@ package sentry
 
 import (
 	"context"
+	"golang.org/x/exp/slices"
 	"net/http"
 	"time"
 
@@ -30,11 +31,12 @@ const (
 )
 
 type SentryPackage struct {
-	Dsn           string  `validate:"required"`
-	Env           string  `validate:"required"`
-	SampleRate    float64 `validate:"required"`
-	EnableTracing bool
-	Debug         bool
+	Dsn                   string  `validate:"required"`
+	Env                   string  `validate:"required"`
+	SampleRate            float64 `validate:"required"`
+	EnableTracing         bool
+	BlacklistTransactions []string
+	Debug                 bool
 }
 
 func WithDsn(dsn string) Option {
@@ -60,6 +62,11 @@ func WithSampleRate(sampleRate float64) Option {
 func WithEnableTracing(enableTracing bool) Option {
 	return func(s *SentryPackage) {
 		s.EnableTracing = enableTracing
+	}
+}
+func WithBlacklistTransactions(TransactionNames []string) Option {
+	return func(s *SentryPackage) {
+		s.BlacklistTransactions = TransactionNames
 	}
 }
 
@@ -116,6 +123,20 @@ func NewSentry(
 		Debug:            sentryPkg.Debug,
 		Environment:      sentryPkg.Env,
 		TracesSampleRate: sentryPkg.SampleRate,
+		BeforeSendTransaction: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+			if len(sentryPkg.BlacklistTransactions) > 0 && slices.Contains(sentryPkg.BlacklistTransactions, event.Transaction) {
+				return nil
+			}
+
+			return event
+		},
+		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+			if len(sentryPkg.BlacklistTransactions) > 0 && slices.Contains(sentryPkg.BlacklistTransactions, event.Transaction) {
+				return nil
+			}
+
+			return event
+		},
 	})
 	if err != nil {
 		panic(err)

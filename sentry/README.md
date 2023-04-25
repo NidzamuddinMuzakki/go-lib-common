@@ -22,6 +22,7 @@ What's got in this package.
         WithDebug(Debug), // is optional field (default: false) | debug sentry
         WithEnv(Env), // is required field | environment your app
         WithSampleRate(SampleRate), // is required field | To send a representative sample of your errors to Sentry, set the SampleRate option in your SDK configuration to a number between 0 (0% of errors sent) and 1 (100% of errors sent)
+        WithBlacklistTransactions([]string{"POST /v1/sub-sku/cron/late-check-in", "GET /v1/sub-sku/:subSKUID/bpkb/number"}),
     )
 ```
 
