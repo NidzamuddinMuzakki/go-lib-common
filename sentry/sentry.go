@@ -81,6 +81,15 @@ type ISentry interface {
 	HandlingPanic(err interface{})
 	SpanContext(span sentry.Span) context.Context
 	SetRequest(r *http.Request)
+	SetIntegrationCapture(
+		eventName string,
+		request interface{},
+		response interface{},
+	)
+	SetEventCapture(
+		eventName string,
+		data interface{},
+	)
 }
 
 type Option func(*SentryPackage)
@@ -194,5 +203,31 @@ func (s *SentryPackage) SpanContext(span sentry.Span) context.Context {
 func (s *SentryPackage) SetRequest(r *http.Request) {
 	sentry.ConfigureScope(func(scope *sentry.Scope) {
 		scope.SetRequest(r)
+	})
+}
+
+// SetIntegrationCapture event capturing for specific request and response data
+func (s *SentryPackage) SetIntegrationCapture(
+	eventName string,
+	request interface{},
+	response interface{},
+) {
+	sentry.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetContext(eventName, map[string]interface{}{
+			"request":  request,
+			"response": response,
+		})
+	})
+}
+
+// SetIntegrationCapture event capturing for specific data
+func (s *SentryPackage) SetEventCapture(
+	eventName string,
+	data interface{},
+) {
+	sentry.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetContext(eventName, map[string]interface{}{
+			"data": data,
+		})
 	})
 }
