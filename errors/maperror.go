@@ -14,6 +14,7 @@ var (
 	ErrMigrate          = errors.New("failed when migrating database")
 	ErrFailedParseToCSV = errors.New("failed when converting data to csv")
 	ErrFailedUploadToS3 = errors.New("failed when uploading file to s3")
+	ErrCustom           = errors.New("custom message")
 )
 
 type Response struct {
@@ -53,4 +54,14 @@ var MapErrorResponse = map[error]Response{
 			Status:  responseModel.StatusFail,
 		},
 	},
+}
+
+func SetErrCustomResponse() {
+	MapErrorResponse[ErrCustom] = Response{
+		StatusCode: http.StatusBadRequest,
+		Response: responseModel.Response{
+			Status:  responseModel.StatusFail,
+			Message: ErrCustom.Error(),
+		},
+	}
 }

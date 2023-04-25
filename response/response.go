@@ -31,6 +31,8 @@ type ParamHttpErrResp struct {
 
 // HttpErrResp is helper to logger the error, send response and send notification (if statusCode >= 500)
 func HttpErrResp(ctx context.Context, p ParamHttpErrResp) {
+	// SetErrCustomResponse to add error in MapErrorResponse
+	commonError.SetErrCustomResponse()
 	var (
 		c   = p.GinCtx
 		e   = p.Err

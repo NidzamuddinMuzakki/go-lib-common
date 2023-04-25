@@ -20,3 +20,8 @@ type Response struct {
 	PreviousPage uint   `json:"previousPage,omitempty"`
 	TotalPages   uint   `json:"totalPages,omitempty"`
 }
+
+type ValidationResponse struct {
+	Field   string `json:"field,omitempty"`
+	Message string `json:"message,omitempty"`
+}
