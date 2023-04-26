@@ -99,6 +99,8 @@ func (h *httpResp) Return(statusCode int, response interface{}) {
 
 // HttpResp is helper to logger the error, send response and send notification (if statusCode >= 500)
 func HttpResp(ctx context.Context, e error, p ParamHttpErrResp) *httpResp {
+	// SetErrCustomResponse to add error in MapErrorResponse
+	commonError.SetErrCustomResponse()
 	var (
 		c   = p.GinCtx
 		rgs = p.Registry
