@@ -173,6 +173,7 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 					}
 
 					if errCheck == nil && isPermitted {
+						gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, authorizationToken))
 						gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTRBAC))
 						gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, user))
 						gc.Next()
@@ -196,6 +197,7 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 				}
 
 				if slices.Contains(a.PermittedRoles, user.Role.Name) {
+					gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, authorizationToken))
 					gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTEvo))
 					gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, user))
 					gc.Next()
@@ -207,6 +209,7 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 		if xSignature != "" && xServiceName != "" {
 			isPermitted := a.Signature.Verify(gc.Request.Context(), a.SecretKey, xSignature)
 			if isPermitted {
+				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, xSignature))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTSignature))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, model.UserDetail{
 					UserId: 0,
@@ -222,6 +225,7 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 			token := []byte(xServiceName + xServiceName)
 			validateKey := sha256.Sum256(token)
 			if xApiKey == hex.EncodeToString(validateKey[:]) {
+				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, xServiceName))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTAPIKey))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, model.UserDetail{
 					UserId: 0,
