@@ -225,7 +225,7 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 			token := []byte(xServiceName + xServiceName)
 			validateKey := sha256.Sum256(token)
 			if xApiKey == hex.EncodeToString(validateKey[:]) {
-				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, xServiceName))
+				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, xApiKey))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTAPIKey))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, model.UserDetail{
 					UserId: 0,
