@@ -56,12 +56,14 @@ var MapErrorResponse = map[error]Response{
 	},
 }
 
+var ErrCustomResponse = Response{
+	StatusCode: http.StatusBadRequest,
+	Response: responseModel.Response{
+		Status:  responseModel.StatusFail,
+		Message: ErrCustom.Error(),
+	},
+}
+
 func SetErrCustomResponse() {
-	MapErrorResponse[ErrCustom] = Response{
-		StatusCode: http.StatusBadRequest,
-		Response: responseModel.Response{
-			Status:  responseModel.StatusFail,
-			Message: ErrCustom.Error(),
-		},
-	}
+	MapErrorResponse[ErrCustom] = ErrCustomResponse
 }
