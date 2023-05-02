@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ErrCustomResponse   Response
 	ErrSQLQueryBuilder  = errors.New("error query builder")
 	ErrSQLExec          = errors.New("error sql exec")
 	ErrRequiredMessage  = errors.New("require message to start money recon")
@@ -56,12 +57,15 @@ var MapErrorResponse = map[error]Response{
 	},
 }
 
-var ErrCustomResponse = Response{
-	StatusCode: http.StatusBadRequest,
-	Response: responseModel.Response{
-		Status:  responseModel.StatusFail,
-		Message: ErrCustom.Error(),
-	},
+func SetDataErrCustom(statusCode int, message string, data any) {
+	ErrCustomResponse = Response{
+		StatusCode: statusCode,
+		Response: responseModel.Response{
+			Status:  responseModel.StatusFail,
+			Message: message,
+			Data:    data,
+		},
+	}
 }
 
 func SetErrCustomResponse() {
