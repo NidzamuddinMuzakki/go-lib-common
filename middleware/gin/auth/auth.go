@@ -381,8 +381,8 @@ func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles []string) gin.HandlerF
 		span := a.Sentry.StartSpan(reqCtx, logCtx)
 		defer span.Finish()
 
-		var token = gc.GetHeader(constant.AuthorizationHeader)
-		if token == "" {
+		var authorizationToken = gc.GetHeader(constant.AuthorizationHeader)
+		if authorizationToken == "" {
 			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
 				Status:  responseModel.StatusFail,
 				Message: http.StatusText(http.StatusUnauthorized)},
@@ -390,9 +390,9 @@ func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles []string) gin.HandlerF
 			return
 		}
 
-		tokenArr := strings.Split(token, " ")
+		tokenArr := strings.Split(authorizationToken, " ")
 		lastIndex := len(tokenArr) - 1
-		token = tokenArr[lastIndex]
+		token := tokenArr[lastIndex]
 		isAllowed, userDetail, err := a.RBACClient.IsRoleAllowed(allowedRoles, token)
 		if err != nil {
 			logger.Error(gc.Request.Context(), err.Error(), err, logger.Tag{
@@ -414,6 +414,7 @@ func (a *MiddlewareAuthPackage) AuthRoleRBAC(allowedRoles []string) gin.HandlerF
 			return
 		}
 
+		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, authorizationToken))
 		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTRBAC))
 		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, userDetail))
 		gc.Next()
@@ -428,8 +429,8 @@ func (a *MiddlewareAuthPackage) AuthPermissionRBAC(allowedPermissions []string) 
 		span := a.Sentry.StartSpan(reqCtx, logCtx)
 		defer span.Finish()
 
-		var token = gc.GetHeader(constant.AuthorizationHeader)
-		if token == "" {
+		var authorizationToken = gc.GetHeader(constant.AuthorizationHeader)
+		if authorizationToken == "" {
 			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
 				Status:  responseModel.StatusFail,
 				Message: http.StatusText(http.StatusUnauthorized)},
@@ -437,9 +438,9 @@ func (a *MiddlewareAuthPackage) AuthPermissionRBAC(allowedPermissions []string) 
 			return
 		}
 
-		tokenArr := strings.Split(token, " ")
+		tokenArr := strings.Split(authorizationToken, " ")
 		lastIndex := len(tokenArr) - 1
-		token = tokenArr[lastIndex]
+		token := tokenArr[lastIndex]
 		isAllowed, userDetail, err := a.RBACClient.IsPermissionAllowed(allowedPermissions, token)
 		if err != nil || !isAllowed {
 			if err != nil {
@@ -455,6 +456,7 @@ func (a *MiddlewareAuthPackage) AuthPermissionRBAC(allowedPermissions []string) 
 			return
 		}
 
+		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, authorizationToken))
 		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTRBAC))
 		gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserDetail, userDetail))
 		gc.Next()
