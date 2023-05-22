@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"bitbucket.org/moladinTech/go-lib-common/logger"
-	"bitbucket.org/moladinTech/go-lib-common/sentry"
+	commonSentry "bitbucket.org/moladinTech/go-lib-common/sentry"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
+	"github.com/getsentry/sentry-go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -23,10 +24,10 @@ type IMiddlewareTracer interface {
 }
 
 type MiddlewareTracerPackage struct {
-	Sentry sentry.ISentry `validate:"required"`
+	Sentry commonSentry.ISentry `validate:"required"`
 }
 
-func WithSentry(sentry sentry.ISentry) Option {
+func WithSentry(sentry commonSentry.ISentry) Option {
 	return func(s *MiddlewareTracerPackage) {
 		s.Sentry = sentry
 	}
@@ -95,7 +96,7 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 			c.Request.Context(),
 			"common.middleware.gin.trace.Tracer",
 			fmt.Sprintf("%s %s", c.Request.Method, c.FullPath()),
-			func(ctx context.Context) (string, uint8) {
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
 				c.Request = c.Request.WithContext(ctx)
 				s.Sentry.SetRequest(c.Request)
 				c.Next()
@@ -104,11 +105,11 @@ func (s *MiddlewareTracerPackage) Tracer() gin.HandlerFunc {
 
 				switch c.Writer.Status() / 100 {
 				case 2:
-					statusSpan = uint8(sentry.STATUS_OK)
+					statusSpan = uint8(commonSentry.STATUS_OK)
 				case 4:
-					statusSpan = uint8(sentry.STATUS_INVALID_ARGUMENT)
+					statusSpan = uint8(commonSentry.STATUS_INVALID_ARGUMENT)
 				case 5:
-					statusSpan = uint8(sentry.STATUS_INTERNAL_SERVER_ERROR)
+					statusSpan = uint8(commonSentry.STATUS_INTERNAL_SERVER_ERROR)
 				}
 				return status, statusSpan
 			},

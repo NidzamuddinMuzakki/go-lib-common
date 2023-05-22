@@ -3,9 +3,10 @@ package sentry
 
 import (
 	"context"
-	"golang.org/x/exp/slices"
 	"net/http"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"bitbucket.org/moladinTech/go-lib-common/constant"
 	commonContext "bitbucket.org/moladinTech/go-lib-common/context"
@@ -75,7 +76,7 @@ type ISentry interface {
 		ctx context.Context,
 		spanName string,
 		transactionName string,
-		fn func(ctx context.Context) (string, uint8),
+		fn func(ctx context.Context, span *sentry.Span) (string, uint8),
 	)
 	Trace(ctx context.Context, spanName string, fn func(ctx context.Context, span *sentry.Span))
 	StartSpan(ctx context.Context, spanName string) *sentry.Span
@@ -150,7 +151,7 @@ func (s *SentryPackage) SetStartTransaction(
 	ctx context.Context,
 	spanName string,
 	transactionName string,
-	fn func(ctx context.Context) (string, uint8),
+	fn func(ctx context.Context, span *sentry.Span) (string, uint8),
 ) {
 	span := sentry.StartSpan(ctx, spanName, sentry.TransactionName(transactionName))
 	defer span.Finish()
@@ -158,7 +159,7 @@ func (s *SentryPackage) SetStartTransaction(
 	span.TraceID = sentry.TraceID(uuid.MustParse(xRequestID))
 	span.SetTag(constant.XRequestIdHeader, xRequestID)
 
-	status, spanStatus := fn(span.Context())
+	status, spanStatus := fn(span.Context(), span)
 	span.SetTag("real_response_status", status)
 	span.Status = sentry.SpanStatus(spanStatus)
 }

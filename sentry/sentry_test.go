@@ -59,7 +59,7 @@ func TestSetStartTransaction_ShouldSucceedWithTrace(t *testing.T) {
 			ctx,
 			"span name test",
 			"transaction name",
-			func(ctx context.Context) (string, uint8) {
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
 				newSentry.Trace(ctx, "span name test 2", func(ctx context.Context, span *sentry.Span) {
 					log.Println("It works")
 				})
@@ -78,25 +78,26 @@ func TestSetStartTransaction_ShouldSucceedWithTraceManual(t *testing.T) {
 		require.NoError(t, err)
 
 		dsn := os.Getenv("SENTRY_DSN")
-		sentry := commonSentry.NewSentry(
+		s := commonSentry.NewSentry(
 			validator.New(),
 			commonSentry.WithDebug(true),
 			commonSentry.WithDsn(dsn),
 			commonSentry.WithEnv(constant.EnvProduction),
 			commonSentry.WithSampleRate(1.0),
 		)
-		require.NotNil(t, sentry)
+		require.NotNil(t, s)
 
 		key := constant.XRequestIdHeader
 		val := uuid.NewString()
 		ctx := context.WithValue(context.TODO(), key, val)
-		sentry.SetStartTransaction(
+		s.SetStartTransaction(
 			ctx,
 			"span name test",
 			"transaction name",
-			func(ctx context.Context) (string, uint8) {
-				span := sentry.StartSpan(ctx, "span name test 2")
-				defer sentry.Finish(span)
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
+				sp := s.StartSpan(ctx, "span name test 2")
+				defer s.Finish(sp)
+				s.SetTag(span, "consumeGroupId", "123")
 				return "200", uint8(commonSentry.STATUS_OK)
 			},
 		)
@@ -128,7 +129,7 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndTag(t *testing.T) {
 			ctx,
 			"span name test",
 			"transaction name",
-			func(ctx context.Context) (string, uint8) {
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
 				newSentry.Trace(ctx, "span name test 2", func(ctx context.Context, span *sentry.Span) {
 					newSentry.SetTag(span, "tag test", "tag value test")
 				})
@@ -163,7 +164,7 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndUserInfo(t *testing.T) {
 			ctx,
 			"span name test",
 			"transaction name",
-			func(ctx context.Context) (string, uint8) {
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
 				newSentry.Trace(ctx, "span name test 2", func(ctx context.Context, span *sentry.Span) {
 					newSentry.SetUserInfo(commonSentry.UserInfoSentry{
 						ID:       "1",
@@ -202,7 +203,7 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndCaptureException(t *testin
 			ctx,
 			"span name test",
 			"transaction name",
-			func(ctx context.Context) (string, uint8) {
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
 				newSentry.Trace(ctx, "span name test 2", func(ctx context.Context, span *sentry.Span) {
 					newSentry.CaptureException(errors.New("error"))
 				})
@@ -237,7 +238,7 @@ func TestSetStartTransaction_ShouldSucceedWithTraceAndHandlingPanic(t *testing.T
 			ctx,
 			"span name test",
 			"transaction name",
-			func(ctx context.Context) (string, uint8) {
+			func(ctx context.Context, span *sentry.Span) (string, uint8) {
 				newSentry.Trace(ctx, "span name test 2", func(ctx context.Context, span *sentry.Span) {
 					defer func() {
 						if pnc := recover(); pnc != nil {

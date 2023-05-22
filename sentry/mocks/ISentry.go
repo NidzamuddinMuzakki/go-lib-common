@@ -94,7 +94,7 @@ func (_m *ISentry) SetRequest(r *http.Request) {
 }
 
 // SetStartTransaction provides a mock function with given fields: ctx, spanName, transactionName, fn
-func (_m *ISentry) SetStartTransaction(ctx context.Context, spanName string, transactionName string, fn func(context.Context) (string, uint8)) {
+func (_m *ISentry) SetStartTransaction(ctx context.Context, spanName string, transactionName string, fn func(context.Context, *sentry.Span) (string, uint8)) {
 	_m.Called(ctx, spanName, transactionName, fn)
 }
 
