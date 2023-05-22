@@ -142,6 +142,8 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 		xApiKey := gc.GetHeader(constant.XApiKeyHeader)
 		xServiceName := gc.GetHeader(constant.XServiceNameHeader)
 		xSignature := gc.GetHeader(constant.XRequestSignatureHeader)
+		requestID := gc.GetHeader(constant.XRequestIdHeader)
+		requestAt := gc.GetHeader(constant.XRequestAtHeader)
 
 		if xApiKey == "" && xServiceName == "" && authorizationToken == "" && xSignature == "" {
 			gc.AbortWithStatusJSON(http.StatusUnauthorized, responseModel.Response{
@@ -207,7 +209,8 @@ func (a *MiddlewareAuthPackage) Auth(rbacPermissions []string) gin.HandlerFunc {
 		}
 
 		if xSignature != "" && xServiceName != "" {
-			isPermitted := a.Signature.Verify(gc.Request.Context(), a.SecretKey, xSignature)
+			key := xServiceName + ":" + a.ServiceName + ":" + requestID + ":" + requestAt + ":" + a.SecretKey
+			isPermitted := a.Signature.Verify(gc.Request.Context(), key, xSignature)
 			if isPermitted {
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.AuthorizationHeader, xSignature))
 				gc.Request = gc.Request.WithContext(context.WithValue(gc.Request.Context(), constant.XUserType, XSTSignature))
