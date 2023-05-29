@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/moladinTech/go-lib-common/client/moladin_evo"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification"
 	"bitbucket.org/moladinTech/go-lib-common/client/notification/slack"
+	"bitbucket.org/moladinTech/go-lib-common/client/notification_service"
 	"bitbucket.org/moladinTech/go-lib-common/encryption"
 	"bitbucket.org/moladinTech/go-lib-common/exporter"
 	"bitbucket.org/moladinTech/go-lib-common/kafka"
@@ -42,6 +43,7 @@ type IRegistry interface {
 	GetExporterCSV() exporter.Exporter
 	GetSignature() signature.GenerateAndVerify
 	GetPublisher(name string) kafka.IPublisher
+	GetNotifService() notification_service.INotificationService
 }
 
 type registry struct {
@@ -64,6 +66,7 @@ type registry struct {
 	exporterCSV             exporter.Exporter
 	signature               signature.GenerateAndVerify
 	publisher               map[string]kafka.IPublisher
+	notificationService     notification_service.INotificationService
 }
 
 func WithSentry(sentry sentry.ISentry) Option {
@@ -219,6 +222,15 @@ func WithSignature(signature signature.GenerateAndVerify) Option {
 	}
 }
 
+func WithNotificationService(notificationService notification_service.INotificationService) Option {
+	return func(s *registry) {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		s.notificationService = notificationService
+	}
+}
+
 func AddPublisher(name string, publisher kafka.IPublisher) Option {
 	return func(s *registry) {
 		s.mu.Lock()
@@ -318,4 +330,8 @@ func (r *registry) GetPublisher(name string) kafka.IPublisher {
 		return publisher
 	}
 	return nil
+}
+
+func (r *registry) GetNotifService() notification_service.INotificationService {
+	return r.notificationService
 }
