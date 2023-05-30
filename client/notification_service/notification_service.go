@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"bitbucket.org/moladinTech/go-lib-common/constant"
 	"bitbucket.org/moladinTech/go-lib-common/logger"
 	"bitbucket.org/moladinTech/go-lib-common/sentry"
 	commonValidator "bitbucket.org/moladinTech/go-lib-common/validator"
@@ -72,13 +73,15 @@ func WithServiceEnv(serviceEnv string) Option {
 }
 
 type Response struct {
-	Status string `json:"status"`
-	Data   any    `json:"data"`
+	Status  string `json:"status"`
+	Data    any    `json:"data"`
+	Message string `json:"message"`
 }
 
 var (
-	ErrSendNotification = errors.New("failed to send notificationService notification")
-	ErrHealthCheck      = errors.New("failed health check notification")
+	ErrSendSlackNotification = errors.New("failed to send slack notification")
+	ErrSendEmailNotification = errors.New("failed to send email notification")
+	ErrHealthCheck           = errors.New("failed health check notification")
 )
 
 type Option func(*notificationServicePackage)
@@ -146,12 +149,12 @@ func (c *notificationServicePackage) SendSlack(
 		EndStruct(&response)
 
 	if len(err) > 0 {
-		logger.Error(ctx, ErrSendNotification.Error(), err[0], logger.Tag{Key: "logCtx", Value: logCtx})
-		return ErrSendNotification
+		logger.Error(ctx, ErrSendSlackNotification.Error(), err[0], logger.Tag{Key: "logCtx", Value: logCtx})
+		return ErrSendSlackNotification
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return ErrSendNotification
+		return ErrSendSlackNotification
 	}
 
 	return nil
@@ -171,7 +174,10 @@ func (c *notificationServicePackage) SendEmail(
 	)
 	defer span.Finish()
 
-	resp, _, err := c.client.Clone().Post(fmt.Sprintf("%s/%s", c.url, "sendEmail")).
+	resp, _, err := c.client.Clone().Set(
+		constant.ContentTypeHeader,
+		"application/x-www-form-urlencoded",
+	).Post(fmt.Sprintf("%s/%s", c.url, "sendEmail")).
 		Query(struct {
 			To      string `json:"to"`
 			Subject string `json:"subject"`
@@ -184,12 +190,12 @@ func (c *notificationServicePackage) SendEmail(
 		EndStruct(&response)
 
 	if len(err) > 0 {
-		logger.Error(ctx, ErrSendNotification.Error(), err[0], logger.Tag{Key: "logCtx", Value: logCtx})
-		return ErrSendNotification
+		logger.Error(ctx, ErrSendEmailNotification.Error(), err[0], logger.Tag{Key: "logCtx", Value: logCtx})
+		return ErrSendEmailNotification
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return ErrSendNotification
+		return ErrSendEmailNotification
 	}
 
 	return nil

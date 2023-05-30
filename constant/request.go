@@ -14,4 +14,5 @@ var (
 	ContextBackground       = textproto.CanonicalMIMEHeaderKey("ContextBackground")
 	XRequestSignatureHeader = textproto.CanonicalMIMEHeaderKey("x-request-signature")
 	XRequestAtHeader        = textproto.CanonicalMIMEHeaderKey("x-request-at")
+	ContentTypeHeader       = textproto.CanonicalMIMEHeaderKey("content-type")
 )
