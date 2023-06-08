@@ -37,6 +37,7 @@ type SentryPackage struct {
 	SampleRate            float64 `validate:"required"`
 	EnableTracing         bool
 	BlacklistTransactions []string
+	IgnoreErrors          []string
 	Debug                 bool
 }
 
@@ -68,6 +69,11 @@ func WithEnableTracing(enableTracing bool) Option {
 func WithBlacklistTransactions(TransactionNames []string) Option {
 	return func(s *SentryPackage) {
 		s.BlacklistTransactions = TransactionNames
+	}
+}
+func WithIgnoreErrors(ignoreErrors []string) Option {
+	return func(s *SentryPackage) {
+		s.IgnoreErrors = ignoreErrors
 	}
 }
 
@@ -124,6 +130,7 @@ func NewSentry(
 		Debug:            sentryPkg.Debug,
 		Environment:      sentryPkg.Env,
 		TracesSampleRate: sentryPkg.SampleRate,
+		IgnoreErrors:     sentryPkg.IgnoreErrors,
 		BeforeSendTransaction: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
 			if len(sentryPkg.BlacklistTransactions) > 0 && slices.Contains(sentryPkg.BlacklistTransactions, event.Transaction) {
 				return nil
