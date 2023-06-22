@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -39,6 +40,12 @@ func BindFromFile(dest any, filename string, paths ...string) error {
 		return err
 	}
 
+	err = SetEnvFromConsulKV(v)
+	if err != nil {
+		fmt.Printf("failed to set env from file: %+v\n", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -61,7 +68,13 @@ func BindFromConsul(dest any, endPoint, path string) error {
 
 	err = v.Unmarshal(dest)
 	if err != nil {
-		fmt.Printf("failed to unmarshal config: %+v\n", err)
+		fmt.Printf("failed to unmarshal config dest: %+v\n", err)
+		return err
+	}
+
+	err = SetEnvFromConsulKV(v)
+	if err != nil {
+		fmt.Printf("failed to set env from consul: %+v\n", err)
 		return err
 	}
 
@@ -113,4 +126,40 @@ func LoadConsulIntervalFromEnv() (int, error) {
 	}
 
 	return interval, nil
+}
+
+func SetEnvFromConsulKV(v *viper.Viper) error {
+	env := make(map[string]any)
+
+	err := v.Unmarshal(&env)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config env: %+v\n", err)
+		return err
+	}
+
+	for k, v := range env {
+		var (
+			valOf = reflect.ValueOf(v)
+			val   string
+		)
+
+		switch valOf.Kind() {
+		case reflect.String:
+			val = valOf.String()
+		case reflect.Int:
+			val = strconv.Itoa(int(valOf.Int()))
+		case reflect.Uint:
+			val = strconv.Itoa(int(valOf.Uint()))
+		case reflect.Float64:
+			val = strconv.Itoa(int(valOf.Float()))
+		case reflect.Float32:
+			val = strconv.Itoa(int(valOf.Float()))
+		case reflect.Bool:
+			val = strconv.FormatBool(valOf.Bool())
+		}
+
+		os.Setenv(k, val)
+	}
+
+	return nil
 }
